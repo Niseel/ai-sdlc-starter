@@ -268,11 +268,11 @@ wf CLAUDE.md <<EOF
 <!-- VI: Giu duoi 1 trang. Claude doc TAT CA moi phien. -->
 
 ## Commands / Lenh
-- Check: \\`make check\\`   EN: lint + test. This is the gate. / VI: lint + test. Day la cong.
-- Build: \\`make build\\`
-- Test:  \\`make test\\`
-- Lint:  \\`make lint\\`
-- Format:\\`make fmt\\`
+- Check:  make check   EN: lint + test. This is the gate. / VI: lint + test. Day la cong.
+- Build:  make build
+- Test:   make test
+- Lint:   make lint
+- Format: make fmt
 The raw commands behind each target are in AGENTS.md, which every agent reads.
 Cac lenh goc nam trong AGENTS.md.
 
