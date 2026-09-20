@@ -42,8 +42,6 @@ Pin the scaffolder itself by swapping the URL for a tag:
 
 ## What lands in your project
 
-<img src="docs/images/terminal.png" alt="init.sh writing the scaffold" align="right" width="430">
-
 ```
 intent/ specs/ plans/   one artifact per stage
 src/ tests/ evals/      code, tests, agent evals
@@ -56,6 +54,10 @@ REVIEW.md monitoring/   review policy, alert bands
 Real commands, not placeholders: `make check` runs vitest, pytest, `go test` or
 Maven — whichever runtimes you picked — and **fails** when the code is broken.
 CI proves that on every push.
+
+<div align="center">
+  <img src="docs/images/terminal.png" alt="init.sh writing the scaffold" width="820">
+</div>
 
 Then, in Claude Code:
 
