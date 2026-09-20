@@ -103,6 +103,10 @@ function Info ($m) { Write-Host "[info] $m"   -ForegroundColor Cyan }
 function Warn ($m) { Write-Host "[warn] $m"   -ForegroundColor Yellow }
 function Skip ($m) { Write-Host "[skip] $m"   -ForegroundColor DarkGray }
 
+# EN: Set-Location is session-wide in PowerShell, so remember where the user was
+#     and go back at the end. Leaving them inside the new project is surprising.
+# VI: Set-Location doi thu muc cua ca phien, nen nho cho cu va quay lai o cuoi.
+$OriginalLocation = Get-Location
 New-Item -ItemType Directory -Force -Path $Dir | Out-Null
 Set-Location $Dir
 if ([string]::IsNullOrEmpty($Name)) { $Name = Split-Path -Leaf (Get-Location).Path }
@@ -996,3 +1000,5 @@ Write-Host "  1. Edit CLAUDE.md - fill in Commands/Conventions. / Sua CLAUDE.md.
 if ($toolVersions.Count -gt 0) { Write-Host "  2. Install runtimes: 'mise install' or use nvm/asdf. / Cai runtime." }
 Write-Host "  3. Open Claude Code here, then run: /intent <your idea>"
 Write-Host "  4. Read docs/AI-SDLC.md for the full loop. / Doc docs/AI-SDLC.md."
+
+Set-Location $OriginalLocation
