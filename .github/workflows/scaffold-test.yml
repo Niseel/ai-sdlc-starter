@@ -131,14 +131,14 @@ jobs:
         run: |
           set -euo pipefail
           bash scripts/sync-npm-package.sh
-          cd packages/create-ai-sdlc
+          cd packages/ai-sdlc-starter
           npm pack
       - name: install the tarball and run it
         shell: bash
         run: |
           set -euo pipefail
-          npm install -g ./packages/create-ai-sdlc/create-ai-sdlc-*.tgz
-          create-ai-sdlc wrapped -w node,python@3.12 -d out-npx --no-git
+          npm install -g ./packages/ai-sdlc-starter/ai-sdlc-starter-*.tgz
+          ai-sdlc-starter wrapped -w node,python@3.12 -d out-npx --no-git
           test -f out-npx/Makefile
           test -f out-npx/AGENTS.md
           test "$(cat out-npx/.python-version)" = "3.12"

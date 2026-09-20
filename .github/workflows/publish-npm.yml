@@ -1,8 +1,8 @@
 name: publish npm
 
-# EN: Publishes create-ai-sdlc when a release is published. Prefers npm trusted
+# EN: Publishes ai-sdlc-starter when a release is published. Prefers npm trusted
 #     publishing (OIDC, no token); falls back to NPM_TOKEN if the secret is set.
-# VI: Publish create-ai-sdlc khi tao release. Uu tien trusted publishing (OIDC,
+# VI: Publish ai-sdlc-starter khi tao release. Uu tien trusted publishing (OIDC,
 #     khong can token); neu co secret NPM_TOKEN thi dung token.
 
 on:
@@ -30,10 +30,10 @@ jobs:
       - name: smoke test the wrapper
         run: |
           set -euo pipefail
-          node packages/create-ai-sdlc/index.js smoke -w node -d /tmp/smoke --no-git
+          node packages/ai-sdlc-starter/index.js smoke -w node -d /tmp/smoke --no-git
           test -f /tmp/smoke/Makefile
       - name: publish
-        working-directory: packages/create-ai-sdlc
+        working-directory: packages/ai-sdlc-starter
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

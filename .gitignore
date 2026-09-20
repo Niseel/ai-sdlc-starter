@@ -3,7 +3,7 @@ node_modules/
 # designlang scratch output (extract-design skill)
 .design-extract/
 # create-ai-sdlc: synced from the repo root at publish time
-packages/create-ai-sdlc/init.sh
-packages/create-ai-sdlc/init.ps1
-packages/create-ai-sdlc/LICENSE
+packages/ai-sdlc-starter/init.sh
+packages/ai-sdlc-starter/init.ps1
+packages/ai-sdlc-starter/LICENSE
 *.tgz

@@ -39,7 +39,7 @@ function main() {
   const script = findScript(scriptName);
 
   if (!script) {
-    console.error(`create-ai-sdlc: ${scriptName} not found next to ${__filename}`);
+    console.error(`ai-sdlc-starter: ${scriptName} not found next to ${__filename}`);
     console.error("Reinstall the package, or run the script straight from the web:");
     console.error("  https://niseel.github.io/ai-sdlc-starter/");
     process.exit(1);
@@ -53,7 +53,7 @@ function main() {
   const result = spawnSync(command, argv, { stdio: "inherit" });
 
   if (result.error) {
-    console.error(`create-ai-sdlc: could not run ${command}: ${result.error.message}`);
+    console.error(`ai-sdlc-starter: could not run ${command}: ${result.error.message}`);
     process.exit(1);
   }
   process.exit(result.status === null ? 1 : result.status);

@@ -6,7 +6,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-pkg="$root/packages/create-ai-sdlc"
+pkg="$root/packages/ai-sdlc-starter"
 version="$(tr -d '[:space:]' < "$root/VERSION")"
 
 cp "$root/init.sh" "$root/init.ps1" "$root/LICENSE" "$pkg/"
@@ -21,4 +21,4 @@ node -e '
   fs.writeFileSync(file, JSON.stringify(pkg, null, 2) + "\n");
 ' "$pkg/package.json" "$version"
 
-echo "synced create-ai-sdlc@$version"
+echo "synced ai-sdlc-starter@$version"
