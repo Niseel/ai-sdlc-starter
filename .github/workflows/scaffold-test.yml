@@ -57,12 +57,18 @@ jobs:
         run: |
           ./init.ps1 demo -With node,python@3.12,go@1.22,java@21 -Dir out-ps -NoGit
           if (-not (Test-Path out-ps/CLAUDE.md)) { throw "CLAUDE.md missing" }
+          # The quoted form must behave the same way.
+          ./init.ps1 demo -With "node,python@3.12,go@1.22,java@21" -Dir out-ps-quoted -NoGit
+          # And so must the long flags.
+          ./init.ps1 -Name demo -Node latest -Python 3.12 -Go 1.22 -Java 21 -Dir out-ps-long -NoGit
 
       - name: compare bash vs pwsh output (byte for byte)
         shell: bash
         run: |
           set -euo pipefail
           diff -r out-sh out-ps
+          diff -r out-ps out-ps-quoted
+          diff -r out-ps out-ps-long
           echo "bash and pwsh agree on $(find out-sh -type f | wc -l) files"
 
       - name: manifest for cross-OS comparison

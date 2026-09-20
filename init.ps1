@@ -22,8 +22,10 @@ param(
   [Parameter(Position = 0)]
   [Alias("n")]
   [string]$Name = "",
+  # EN: string[] so both -With node,python and -With "node,python" work.
+  # VI: Dung string[] de ca hai kieu deu chay.
   [Alias("w")]
-  [string]$With = "",
+  [string[]]$With = @(),
   [Alias("d")]
   [string]$Dir = ".",
   [string]$Node = "",
@@ -75,8 +77,8 @@ if ($Help) { Show-Usage; exit 0 }
 # ---- Runtime list: -With node,python@3.12 / Danh sach runtime ---------------
 # EN: "name" alone uses the default version below; "name@ver" pins that version.
 # VI: Chi "ten" thi dung ban mac dinh ben duoi; "ten@ban" thi ghim dung ban do.
-if ($With) {
-  foreach ($item in ($With -split ",")) {
+if ($With.Count -gt 0) {
+  foreach ($item in ($With -join "," -split ",")) {
     $trimmed = $item.Trim()
     if (-not $trimmed) { continue }
     $parts = $trimmed -split "@", 2
