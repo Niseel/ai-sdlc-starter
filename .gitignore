@@ -1,0 +1,4 @@
+.DS_Store
+node_modules/
+# designlang scratch output (extract-design skill)
+.design-extract/
