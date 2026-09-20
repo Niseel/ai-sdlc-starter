@@ -1,0 +1,7 @@
+# EN: The scaffolders and their generated files must stay LF on every OS.
+# VI: Script va file sinh ra phai giu LF tren moi he dieu hanh.
+* text=auto eol=lf
+*.sh text eol=lf
+*.ps1 text eol=lf
+*.png binary
+*.svg text eol=lf
