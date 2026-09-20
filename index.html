@@ -285,7 +285,7 @@
             </label>
             <label class="field">
               <span>Python</span>
-              <select class="input" name="python"><option value="">—</option><option>3.13</option><option selected>3.12</option><option>3.11</option><option>3.10</option></select>
+              <select class="input" name="python"><option value="">—</option><option>3.13</option><option>3.12</option><option>3.11</option><option>3.10</option></select>
             </label>
             <label class="field">
               <span>Go</span>
@@ -310,6 +310,11 @@
               </button>
             </div>
             <pre class="codeblock builder__code"><code id="built-cmd" data-cmd="built"></code></pre>
+            <p class="builder__note subtle" data-multi-note hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-info"/></svg>
+              <span class="en">More than one runtime makes a polyglot repo: <code class="code-inline">make check</code> then runs every stack in turn. Pick one unless you really want that.</span>
+              <span class="vi">Chọn nhiều runtime nghĩa là repo đa ngôn ngữ: <code class="code-inline">make check</code> sẽ chạy lần lượt từng stack. Chỉ nên chọn một, trừ khi bạn thật sự cần.</span>
+            </p>
             <p class="builder__note subtle" data-src-note="short">
               <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-info"/></svg>
               <span class="en">Short URL, always the latest release on <code class="code-inline">main</code>. For a build that can never change, switch to the pinned tag.</span>

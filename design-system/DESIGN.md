@@ -95,6 +95,7 @@ Rules:
 - **Form** `.field` + `.input` (also on `select`).
 - **FAQ** `.faq` with native `details/summary`.
 - **Decor** `.orb.orb--violet|--blue` absolute, behind content; `.hairline` gradient divider.
+- **Toggling**: use the `hidden` attribute; `components.css` forces it to win over `display`.
 
 ## 7. Motion
 
