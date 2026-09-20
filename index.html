@@ -114,7 +114,9 @@
 <span class="t-line"><span class="ok">[ok]</span>   .github/workflows/agent-evals.yml</span>
 <span class="t-line"><span class="ok">[ok]</span>   package.json (node latest)</span>
 <span class="t-line"><span class="ok">[ok]</span>   pyproject.toml (python 3.12)</span>
-<span class="t-line"><span class="ok">[ok]</span>   AI-Native SDLC scaffold ready <span class="comment"># 41 files</span></span>
+<span class="t-line"><span class="ok">[ok]</span>   Makefile <span class="comment"># make check = lint + test</span></span>
+<span class="t-line"><span class="ok">[ok]</span>   AGENTS.md <span class="comment"># read by every coding agent</span></span>
+<span class="t-line"><span class="ok">[ok]</span>   AI-Native SDLC scaffold ready <span class="comment"># 49 files</span></span>
 <span class="t-line"><span class="prompt">$</span> claude <span class="comment"># then: /intent &lt;your idea&gt;</span><span class="caret" aria-hidden="true"></span></span></code></pre>
         </div>
       </div>
@@ -237,8 +239,8 @@
         <div class="bento">
           <article class="card bento__big reveal">
             <p class="stat__label"><span class="en">Files from one command</span><span class="vi">File từ một lệnh duy nhất</span></p>
-            <p class="stat__value"><span class="num" data-count="41">41</span></p>
-            <p class="stat__note"><span class="en">36 by default, 41 with Node and Python pinned. Byte-for-byte identical from bash and PowerShell; re-running skips what exists unless you pass <code class="code-inline">--force</code>.</span><span class="vi">Mặc định 36 file, 41 file khi ghim Node và Python. Bash và PowerShell cho ra giống hệt từng byte; chạy lại sẽ bỏ qua file đã có, trừ khi dùng <code class="code-inline">--force</code>.</span></p>
+            <p class="stat__value"><span class="num" data-count="49">49</span></p>
+            <p class="stat__note"><span class="en">39 with no runtime, 49 with Node and Python, 55 with all four — including a Makefile, AGENTS.md and tests that actually run. Byte-for-byte identical from bash and PowerShell; re-running skips what exists unless you pass <code class="code-inline">--force</code>.</span><span class="vi">39 file khi không chọn runtime, 49 file với Node và Python, 55 file với cả bốn — gồm Makefile, AGENTS.md và test chạy thật. Bash và PowerShell cho ra giống hệt từng byte; chạy lại sẽ bỏ qua file đã có, trừ khi dùng <code class="code-inline">--force</code>.</span></p>
           </article>
           <article class="card card--angled reveal">
             <p class="stat__label"><span class="en">Subagents, one job each</span><span class="vi">Subagent, mỗi con một việc</span></p>
@@ -371,6 +373,8 @@
 ├── <span class="tree__dir">docs/</span>              <span class="comment">#   guide, ADRs, runbooks</span>
 ├── <span class="tree__dir">.github/workflows/</span> <span class="comment">#   evals + review CI</span>
 ├── CLAUDE.md          <span class="comment">#   agent day-one context</span>
+├── AGENTS.md          <span class="comment">#   same contract, every agent</span>
+├── Makefile           <span class="comment">#   make check = the gate</span>
 └── <span class="tree__dir">.claude/</span>
     ├── <span class="tree__dir">agents/</span>        <span class="comment"># 5 subagents</span>
     ├── <span class="tree__dir">skills/</span>        <span class="comment"># /intent /spec /feature</span>

@@ -1,6 +1,6 @@
 <#
 =============================================================================
- init.ps1   (init-ai-sdlc v0.1.0)
+ init.ps1   (init-ai-sdlc v0.2.0)
  EN: Scaffolds an AI-Native SDLC project (Anthropic 6-stage playbook:
      Plan -> Design -> Build -> Test -> Deploy -> Maintain).
  VI: Tao khung du an theo AI-Native SDLC cua Anthropic (6 giai doan:
@@ -38,7 +38,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$SCRIPT_VERSION = "0.1.0"
+$SCRIPT_VERSION = "0.2.0"
 
 function Show-Usage {
 @'

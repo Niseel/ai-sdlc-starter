@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# init.sh   (init-ai-sdlc v0.1.0)
+# init.sh   (init-ai-sdlc v0.2.0)
 # EN: Scaffolds an AI-Native SDLC project (Anthropic 6-stage playbook:
 #     Plan -> Design -> Build -> Test -> Deploy -> Maintain).
 # VI: Tao khung du an theo AI-Native SDLC cua Anthropic (6 giai doan:
@@ -15,7 +15,7 @@
 # =============================================================================
 set -euo pipefail
 
-VERSION="0.1.0"
+VERSION="0.2.0"
 NAME=""
 DIR="."
 NODE_VER=""

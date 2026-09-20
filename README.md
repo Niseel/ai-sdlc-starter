@@ -32,7 +32,9 @@ your-project/
 ├── REVIEW.md         # Stage 5 Deploy    → review policy (passes, severity)
 ├── monitoring/       # Stage 6 Maintain  → bands.yaml (deterministic triggers)
 ├── docs/             #   AI-SDLC.md guide, ADRs, runbooks, incident records
-├── .github/workflows/#   agent-evals + claude-review CI
+├── Makefile          #   make check = lint + test, the gate for humans and agents
+├── AGENTS.md         #   the same contract, for Codex / Cursor / Copilot / Gemini
+├── .github/workflows/#   CI (make check) + agent-evals + claude-review
 └── .claude/
     ├── agents/       # planner, coder, tester, reviewer, verifier
     ├── skills/       # /intent, /spec, /feature (the orchestrator), secure-api-review
