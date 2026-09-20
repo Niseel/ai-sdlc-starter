@@ -1,6 +1,6 @@
 <#
 =============================================================================
- init.ps1   (init-ai-sdlc v0.1.0)
+ init.ps1   (init-ai-sdlc v0.2.0)
  EN: Scaffolds an AI-Native SDLC project (Anthropic 6-stage playbook:
      Plan -> Design -> Build -> Test -> Deploy -> Maintain).
  VI: Tao khung du an theo AI-Native SDLC cua Anthropic (6 giai doan:
@@ -38,7 +38,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$SCRIPT_VERSION = "0.1.0"
+$SCRIPT_VERSION = "0.2.0"
 
 function Show-Usage {
 @'
@@ -257,12 +257,13 @@ Write-File 'CLAUDE.md' (@'
 <!-- VI: Giu duoi 1 trang. Claude doc TAT CA moi phien. -->
 
 ## Commands / Lenh
-<!-- EN: Fill these in for your stack. Show a healthy output example. -->
-<!-- VI: Dien theo stack cua ban. Kem vi du output binh thuong. -->
-- Build:     <e.g. make build | npm run build | go build ./...>
-- Test:      <e.g. make test  | npm test      | pytest -q | go test ./...>
-- Lint:      <e.g. make lint   | npm run lint  | ruff check .>
-- Typecheck: <e.g. npm run typecheck | mypy .>
+- Check:  make check   EN: lint + test. This is the gate. / VI: lint + test. Day la cong.
+- Build:  make build
+- Test:   make test
+- Lint:   make lint
+- Format: make fmt
+The raw commands behind each target are in AGENTS.md, which every agent reads.
+Cac lenh goc nam trong AGENTS.md.
 
 ## Conventions / Quy uoc
 - <language/version, formatting, patterns to follow>
@@ -473,7 +474,10 @@ eval_file="${1:?usage: check.sh <eval.json> <result.json>}"
 result_file="${2:?usage: check.sh <eval.json> <result.json>}"
 echo "Checking $(basename "$eval_file") against $(basename "$result_file")"
 # TODO: parse result_file and assert the checks in eval_file.
-exit 0
+# EN: Fails on purpose. A grader that always passes is worse than none.
+# VI: Co tinh fail. Bo cham diem luon pass con te hon khong co.
+echo "evals/check.sh is not implemented yet / chua cai dat" >&2
+exit 1
 '@
 
 # ---- 5) Maintain stage: monitoring ------------------------------------------
@@ -916,14 +920,17 @@ jobs:
           prompt: "Review this PR following REVIEW.md. Post findings tagged by severity."
 '@
 
-# ---- 8) Version pinning ------------------------------------------------------
+# ---- 8) Runtime stacks / Bo khung theo ngon ngu ------------------------------
+# EN: Pins versions AND writes a stack that can actually build, test and lint.
+# VI: Ghim phien ban VA tao bo khung build/test/lint chay that.
 $toolVersions = @()
+$mkBuild = @(); $mkTest = @(); $mkLint = @(); $mkFmt = @()
+$rawCmds = @(); $runSteps = @(); $ciSetup = @()
 
 if ($Node) {
   if ($Node -eq "latest") { Write-File '.nvmrc' "node`n" } else { Write-File '.nvmrc' "$Node`n" }
-  if ((-not (Test-Path 'package.json')) -or $Force) {
-    $engine = $Node; if ($Node -eq "latest") { $engine = ">=20" }
-    $pkg = @'
+  $engine = $Node; if ($Node -eq "latest") { $engine = ">=20" }
+  Write-File 'package.json' (@'
 {
   "name": "__NAME__",
   "version": "0.1.0",
@@ -931,55 +938,357 @@ if ($Node) {
   "type": "module",
   "engines": { "node": "__ENGINE__" },
   "scripts": {
-    "build": "echo \"TODO build\"",
-    "test": "echo \"TODO test\" && exit 0",
-    "lint": "echo \"TODO lint\""
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "fmt": "eslint . --fix"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "eslint": "^9.13.0",
+    "vitest": "^3.0.0"
   }
 }
-'@ -replace '__NAME__', $Name -replace '__ENGINE__', $engine
-    Write-File 'package.json' $pkg
-  } else { Skip 'package.json' }
+'@ -replace '__NAME__', $Name -replace '__ENGINE__', $engine)
+  Write-File 'eslint.config.js' @'
+import js from "@eslint/js";
+
+export default [
+  js.configs.recommended,
+  {
+    languageOptions: { ecmaVersion: 2023, sourceType: "module" },
+    rules: { "no-unused-vars": "error", "no-undef": "error" },
+  },
+];
+'@
+  Write-File 'src/index.js' @'
+// EN: Replace with your code. The test proves the toolchain works end to end.
+// VI: Thay bang code cua ban. Test chung minh toolchain chay tu dau den cuoi.
+export function greet(name) {
+  if (!name) throw new Error("name is required");
+  return `Hello, ${name}`;
+}
+'@
+  Write-File 'tests/example.test.js' @'
+import { describe, expect, it } from "vitest";
+import { greet } from "../src/index.js";
+
+describe("greet", () => {
+  it("greets by name", () => {
+    expect(greet("world")).toBe("Hello, world");
+  });
+
+  it("rejects an empty name", () => {
+    expect(() => greet("")).toThrow(/required/);
+  });
+});
+'@
+  $mkBuild += 'npm run build --if-present'
+  $mkTest  += 'npm test'
+  $mkLint  += 'npm run lint'
+  $mkFmt   += 'npm run fmt'
+  $rawCmds += '- Node: `npm ci` (or `npm install`), `npm test` (vitest), `npm run lint` (eslint)'
+  $runSteps += '- Node: `npm install` once, then `make test`'
+  $ciSetup += '      - uses: actions/setup-node@v4'
+  $ciSetup += '        with:'
+  $ciSetup += '          node-version-file: .nvmrc'
+  $ciSetup += '      - run: npm ci || npm install'
   $toolVersions += "nodejs $Node"
 }
 
 if ($Python) {
   Write-File '.python-version' "$Python`n"
-  if ((-not (Test-Path 'pyproject.toml')) -or $Force) {
-    $req = if ($Python -eq "latest") { ">=3.11" } else { ">=$Python" }
-    $py = @'
+  $req = if ($Python -eq "latest") { ">=3.11" } else { ">=$Python" }
+  Write-File 'pyproject.toml' (@'
 [project]
 name = "__NAME__"
 version = "0.1.0"
 requires-python = "__REQ__"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 100
-'@ -replace '__NAME__', $Name -replace '__REQ__', $req
-    Write-File 'pyproject.toml' $py
-  } else { Skip 'pyproject.toml' }
+'@ -replace '__NAME__', $Name -replace '__REQ__', $req)
+  Write-File 'src/example.py' @'
+"""EN: Replace with your code. VI: Thay bang code cua ban."""
+
+
+def greet(name: str) -> str:
+    if not name:
+        raise ValueError("name is required")
+    return f"Hello, {name}"
+'@
+  Write-File 'tests/test_example.py' @'
+import pytest
+
+from example import greet
+
+
+def test_greets_by_name():
+    assert greet("world") == "Hello, world"
+
+
+def test_rejects_empty_name():
+    with pytest.raises(ValueError):
+        greet("")
+'@
+  $mkBuild += 'uv sync'
+  $mkTest  += 'uv run pytest -q'
+  $mkLint  += 'uv run ruff check .'
+  $mkFmt   += 'uv run ruff format .'
+  $rawCmds += '- Python: `uv sync`, `uv run pytest -q`, `uv run ruff check .`'
+  $runSteps += '- Python: install uv (https://docs.astral.sh/uv/), then `make test`'
+  $ciSetup += '      - uses: astral-sh/setup-uv@v5'
+  $ciSetup += '      - run: uv sync'
   $toolVersions += "python $Python"
 }
 
 if ($Go) {
-  if ((-not (Test-Path 'go.mod')) -or $Force) {
-    $gv = if ($Go -eq "latest") { "1.22" } else { $Go }
-    $gomod = @'
+  $gv = if ($Go -eq "latest") { "1.22" } else { $Go }
+  Write-File 'go.mod' (@'
 module __NAME__
 
 go __GV__
-'@ -replace '__NAME__', $Name -replace '__GV__', $gv
-    Write-File 'go.mod' $gomod
-  } else { Skip 'go.mod' }
+'@ -replace '__NAME__', $Name -replace '__GV__', $gv)
+  Write-File 'src/app/app.go' @'
+// Package app is a placeholder. EN: replace with your code. VI: thay bang code cua ban.
+package app
+
+import "errors"
+
+// Greet returns a greeting, or an error when name is empty.
+func Greet(name string) (string, error) {
+	if name == "" {
+		return "", errors.New("name is required")
+	}
+	return "Hello, " + name, nil
+}
+'@
+  Write-File 'src/app/app_test.go' @'
+package app
+
+import "testing"
+
+func TestGreet(t *testing.T) {
+	got, err := Greet("world")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "Hello, world" {
+		t.Fatalf("got %q, want %q", got, "Hello, world")
+	}
+}
+
+func TestGreetRejectsEmptyName(t *testing.T) {
+	if _, err := Greet(""); err == nil {
+		t.Fatal("expected an error for an empty name")
+	}
+}
+'@
+  $mkBuild += 'go build ./...'
+  $mkTest  += 'go test ./...'
+  $mkLint  += 'go vet ./...'
+  $mkFmt   += 'gofmt -w .'
+  $rawCmds += '- Go: `go build ./...`, `go test ./...`, `go vet ./...`'
+  $runSteps += '- Go: `make test`'
+  $ciSetup += '      - uses: actions/setup-go@v5'
+  $ciSetup += '        with:'
+  $ciSetup += '          go-version-file: go.mod'
   $toolVersions += "golang $Go"
 }
 
-if ($Java) { $toolVersions += "java $Java" }
+if ($Java) {
+  $jv = if ($Java -eq "latest") { "21" } else { $Java }
+  Write-File 'pom.xml' (@'
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>__NAME__</artifactId>
+  <version>0.1.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.release>__JV__</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.11.3</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.2</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+'@ -replace '__NAME__', $Name -replace '__JV__', $jv)
+  Write-File 'src/main/java/app/Greeter.java' @'
+package app;
+
+/** EN: Replace with your code. VI: Thay bang code cua ban. */
+public final class Greeter {
+    private Greeter() {}
+
+    public static String greet(String name) {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("name is required");
+        }
+        return "Hello, " + name;
+    }
+}
+'@
+  Write-File 'src/test/java/app/GreeterTest.java' @'
+package app;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
+
+class GreeterTest {
+    @Test
+    void greetsByName() {
+        assertEquals("Hello, world", Greeter.greet("world"));
+    }
+
+    @Test
+    void rejectsEmptyName() {
+        assertThrows(IllegalArgumentException.class, () -> Greeter.greet(""));
+    }
+}
+'@
+  $mkBuild += 'mvn -q -B compile'
+  $mkTest  += 'mvn -q -B test'
+  $mkLint  += 'mvn -q -B validate'
+  $rawCmds += '- Java: `mvn -q -B test`, `mvn -q -B compile` (Maven, JUnit 5)'
+  $runSteps += '- Java: `make test`'
+  $ciSetup += '      - uses: actions/setup-java@v4'
+  $ciSetup += '        with:'
+  $ciSetup += '          distribution: temurin'
+  $ciSetup += "          java-version: '$jv'"
+  $ciSetup += '      - run: mvn -q -B -DskipTests compile'
+  $toolVersions += "java $Java"
+}
 
 if ($toolVersions.Count -gt 0) {
   if ((-not (Test-Path '.tool-versions')) -or $Force) {
     Write-File '.tool-versions' (($toolVersions -join "`n") + "`n")
   } else { Skip '.tool-versions' }
 }
+
+# ---- 8b) One entry point: Makefile + AGENTS.md + CI --------------------------
+$noneMsg = "No command configured for this target. Edit the Makefile."
+function Get-MakeBody {
+  param([string[]]$Cmds)
+  if ($Cmds.Count -eq 0) { return @("`t@echo `"$noneMsg`"", "`t@exit 1") }
+  return @($Cmds | ForEach-Object { "`t$_" })
+}
+$mk = @(
+  '# EN: The one entry point. Humans, hooks, CI and agents run these.',
+  '# VI: Cua vao duy nhat. Nguoi, hook, CI va agent deu chay cac lenh nay.',
+  '.PHONY: check build test lint fmt',
+  '',
+  '# EN: check is the gate: it must pass before any task is called done.',
+  '# VI: check la cong: phai pass truoc khi bao xong viec.',
+  'check: lint test',
+  '',
+  'build:'
+)
+$mk += Get-MakeBody $mkBuild
+$mk += ''
+$mk += 'test:'
+$mk += Get-MakeBody $mkTest
+$mk += ''
+$mk += 'lint:'
+$mk += Get-MakeBody $mkLint
+$mk += ''
+$mk += 'fmt:'
+$mk += Get-MakeBody $mkFmt
+Write-File 'Makefile' (($mk -join "`n") + "`n")
+
+if ($rawCmds.Count -eq 0) { $rawCmds = @('- No runtime selected yet. Re-run the scaffolder with -w node,python.') }
+if ($runSteps.Count -eq 0) { $runSteps = @('- Pick a runtime first: re-run the scaffolder with -w node,python.') }
+
+Write-File 'AGENTS.md' (@'
+# AGENTS.md - __NAME__
+
+EN: Instructions for any coding agent in this repo (Codex, Cursor, Copilot,
+Gemini CLI, Aider...). Claude Code reads CLAUDE.md, which points here.
+VI: Huong dan cho moi coding agent trong repo nay. Claude Code doc CLAUDE.md,
+file do tro ve day.
+
+## Project layout / Bo cuc
+- `intent/` -> why. `specs/` -> what. `plans/` -> how. One file per change.
+- `src/` code, `tests/` tests, `evals/` agent regression evals.
+- `docs/` guide, ADRs, runbooks, incidents. `monitoring/bands.yaml` alert bands.
+- `.claude/` agents, skills, hooks, permissions. Do not edit hooks or settings.
+
+## How to run / Cach chay
+__RUNSTEPS__
+
+## Build, test, lint / Build, test, lint
+- `make check` - lint + test. This is the gate.
+- `make build`, `make test`, `make lint`, `make fmt`.
+Raw commands behind the targets / Lenh goc:
+__RAWCMDS__
+
+## Conventions / Quy uoc
+- Work on a branch named `feat/<slug>`; never commit straight to the main branch.
+- Conventional Commits, and reference the plan file in the body.
+- Keep the change inside the scope of the plan. Out-of-scope ideas go in the plan's Risks.
+
+## Do not / Khong duoc
+- Do not push, merge, deploy, or rewrite git history. A human does that.
+- Do not weaken, skip or delete a test to make a suite pass. Fix the code.
+- Do not edit `.claude/hooks/**` or `.claude/settings.json`.
+- Do not bump dependency versions unless the task says so.
+- Do not commit secrets. `.env` is ignored; `.env.example` is the template.
+
+## What done means / The nao la xong
+1. `make check` passes, and the output is pasted into the reply as evidence.
+2. Every acceptance criterion in the plan is met, or listed as not met.
+3. The change is committed on the feature branch after the human approves it.
+'@ -replace '__NAME__', $Name -replace '__RUNSTEPS__', ($runSteps -join "`n") -replace '__RAWCMDS__', ($rawCmds -join "`n"))
+
+$ciSetupText = ""
+if ($ciSetup.Count -gt 0) { $ciSetupText = ($ciSetup -join "`n") + "`n" }
+Write-File '.github/workflows/ci.yml' (@'
+name: CI
+# EN: Runs the same 'make check' the agent runs. Keep this green.
+# VI: Chay dung 'make check' ma agent chay. Giu cho xanh.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+__CISETUP__      - run: make check
+'@ -replace '__CISETUP__', $ciSetupText)
 
 # ---- 9) git init -------------------------------------------------------------
 if (-not $NoGit) {

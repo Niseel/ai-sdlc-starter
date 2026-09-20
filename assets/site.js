@@ -114,7 +114,7 @@
   function renderCommands() {
     var quick = $('[data-cmd="quick"]');
     var built = $('[data-cmd="built"]');
-    if (quick) quick.textContent = buildCommand({ name: "my-app", node: "latest", python: "3.12" }, os);
+    if (quick) quick.textContent = buildCommand({ name: "my-app", node: "latest" }, os);
     if (built) built.textContent = buildCommand(readOptions(), os);
     $$("[data-os]").forEach(function (b) {
       b.setAttribute("aria-selected", String(b.getAttribute("data-os") === os));
@@ -125,6 +125,8 @@
     $$("[data-src-note]").forEach(function (el) {
       el.hidden = el.getAttribute("data-src-note") !== src;
     });
+    var picked = ["node", "python", "go", "java"].filter(function (r) { return readOptions()[r]; }).length;
+    $$("[data-multi-note]").forEach(function (el) { el.hidden = picked < 2; });
   }
 
   $$("[data-src]").forEach(function (b) {

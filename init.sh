@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# init.sh   (init-ai-sdlc v0.1.0)
+# init.sh   (init-ai-sdlc v0.2.0)
 # EN: Scaffolds an AI-Native SDLC project (Anthropic 6-stage playbook:
 #     Plan -> Design -> Build -> Test -> Deploy -> Maintain).
 # VI: Tao khung du an theo AI-Native SDLC cua Anthropic (6 giai doan:
@@ -15,7 +15,7 @@
 # =============================================================================
 set -euo pipefail
 
-VERSION="0.1.0"
+VERSION="0.2.0"
 NAME=""
 DIR="."
 NODE_VER=""
@@ -138,6 +138,7 @@ wf() {
   ok "$path"
 }
 mkd() { mkdir -p "$1"; [ -e "$1/.gitkeep" ] || : >"$1/.gitkeep"; }
+TMP_MAKEFILE="$(mktemp)"
 
 # =============================================================================
 # 1) Directories / Thu muc
@@ -267,12 +268,13 @@ wf CLAUDE.md <<EOF
 <!-- VI: Giu duoi 1 trang. Claude doc TAT CA moi phien. -->
 
 ## Commands / Lenh
-<!-- EN: Fill these in for your stack. Show a healthy output example. -->
-<!-- VI: Dien theo stack cua ban. Kem vi du output binh thuong. -->
-- Build:     <e.g. make build | npm run build | go build ./...>
-- Test:      <e.g. make test  | npm test      | pytest -q | go test ./...>
-- Lint:      <e.g. make lint   | npm run lint  | ruff check .>
-- Typecheck: <e.g. npm run typecheck | mypy .>
+- Check:  make check   EN: lint + test. This is the gate. / VI: lint + test. Day la cong.
+- Build:  make build
+- Test:   make test
+- Lint:   make lint
+- Format: make fmt
+The raw commands behind each target are in AGENTS.md, which every agent reads.
+Cac lenh goc nam trong AGENTS.md.
 
 ## Conventions / Quy uoc
 - <language/version, formatting, patterns to follow>
@@ -487,7 +489,10 @@ eval_file="${1:?usage: check.sh <eval.json> <result.json>}"
 result_file="${2:?usage: check.sh <eval.json> <result.json>}"
 echo "Checking $(basename "$eval_file") against $(basename "$result_file")"
 # TODO: parse result_file and assert the checks in eval_file.
-exit 0
+# EN: Fails on purpose. A grader that always passes is worse than none.
+# VI: Co tinh fail. Bo cham diem luon pass con te hon khong co.
+echo "evals/check.sh is not implemented yet / chua cai dat" >&2
+exit 1
 EOF
 chmod +x evals/check.sh 2>/dev/null || true
 
@@ -944,17 +949,25 @@ jobs:
 EOF
 
 # =============================================================================
-# 8) Version pinning / Ghim phien ban  (writes version files + manifests only)
+# 8) Runtime stacks / Bo khung theo ngon ngu
+# EN: Pins versions AND writes a stack that can actually build, test and lint.
+#     The agent needs a command that returns pass or fail. A stub that always
+#     passes is worse than nothing.
+# VI: Ghim phien ban VA tao bo khung build/test/lint chay that. Agent can mot
+#     lenh tra ve pass hay fail. Stub luon pass con te hon khong co.
 # =============================================================================
+nl='
+'
 tool_versions=""
+mk_build=""; mk_test=""; mk_lint=""; mk_fmt=""; raw_cmds=""; ci_setup=""; run_steps=""
 add_tv(){ tool_versions="${tool_versions}$1\n"; }
 
+# ---- Node + Vitest ----------------------------------------------------------
 if [ -n "$NODE_VER" ]; then
   if [ "$NODE_VER" = "latest" ]; then echo "node" > .nvmrc; else echo "$NODE_VER" > .nvmrc; fi
   ok ".nvmrc"
-  if [ ! -e package.json ] || [ "$FORCE" -eq 1 ]; then
-    node_engine="$NODE_VER"; [ "$NODE_VER" = "latest" ] && node_engine=">=20"
-    cat > package.json <<PKG
+  node_engine="$NODE_VER"; [ "$NODE_VER" = "latest" ] && node_engine=">=20"
+  wf package.json <<PKG
 {
   "name": "$NAME",
   "version": "0.1.0",
@@ -962,49 +975,250 @@ if [ -n "$NODE_VER" ]; then
   "type": "module",
   "engines": { "node": "$node_engine" },
   "scripts": {
-    "build": "echo \"TODO build\"",
-    "test": "echo \"TODO test\" && exit 0",
-    "lint": "echo \"TODO lint\""
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "fmt": "eslint . --fix"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "eslint": "^9.13.0",
+    "vitest": "^3.0.0"
   }
 }
 PKG
-    ok "package.json (node $NODE_VER)"
-  else skip "package.json"; fi
+  wf eslint.config.js <<'ESL'
+import js from "@eslint/js";
+
+export default [
+  js.configs.recommended,
+  {
+    languageOptions: { ecmaVersion: 2023, sourceType: "module" },
+    rules: { "no-unused-vars": "error", "no-undef": "error" },
+  },
+];
+ESL
+  wf src/index.js <<'SRCJS'
+// EN: Replace with your code. The test proves the toolchain works end to end.
+// VI: Thay bang code cua ban. Test chung minh toolchain chay tu dau den cuoi.
+export function greet(name) {
+  if (!name) throw new Error("name is required");
+  return `Hello, ${name}`;
+}
+SRCJS
+  wf tests/example.test.js <<'TSTJS'
+import { describe, expect, it } from "vitest";
+import { greet } from "../src/index.js";
+
+describe("greet", () => {
+  it("greets by name", () => {
+    expect(greet("world")).toBe("Hello, world");
+  });
+
+  it("rejects an empty name", () => {
+    expect(() => greet("")).toThrow(/required/);
+  });
+});
+TSTJS
+  mk_build="${mk_build}npm run build --if-present${nl}"
+  mk_test="${mk_test}npm test${nl}"
+  mk_lint="${mk_lint}npm run lint${nl}"
+  mk_fmt="${mk_fmt}npm run fmt${nl}"
+  raw_cmds="${raw_cmds}- Node: \`npm ci\` (or \`npm install\`), \`npm test\` (vitest), \`npm run lint\` (eslint)${nl}"
+  run_steps="${run_steps}- Node: \`npm install\` once, then \`make test\`${nl}"
+  ci_setup="${ci_setup}      - uses: actions/setup-node@v4${nl}        with:${nl}          node-version-file: .nvmrc${nl}      - run: npm ci || npm install${nl}"
   add_tv "nodejs $NODE_VER"
 fi
 
+# ---- Python + uv + pytest ---------------------------------------------------
 if [ -n "$PY_VER" ]; then
   echo "$PY_VER" > .python-version; ok ".python-version"
-  if [ ! -e pyproject.toml ] || [ "$FORCE" -eq 1 ]; then
-    req="$PY_VER"; case "$PY_VER" in latest) req=">=3.11";; *) req=">=$PY_VER";; esac
-    cat > pyproject.toml <<PY
+  req="$PY_VER"; case "$PY_VER" in latest) req=">=3.11";; *) req=">=$PY_VER";; esac
+  wf pyproject.toml <<PY
 [project]
 name = "$NAME"
 version = "0.1.0"
 requires-python = "$req"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 100
 PY
-    ok "pyproject.toml (python $PY_VER)"
-  else skip "pyproject.toml"; fi
+  wf src/example.py <<'SRCPY'
+"""EN: Replace with your code. VI: Thay bang code cua ban."""
+
+
+def greet(name: str) -> str:
+    if not name:
+        raise ValueError("name is required")
+    return f"Hello, {name}"
+SRCPY
+  wf tests/test_example.py <<'TSTPY'
+import pytest
+
+from example import greet
+
+
+def test_greets_by_name():
+    assert greet("world") == "Hello, world"
+
+
+def test_rejects_empty_name():
+    with pytest.raises(ValueError):
+        greet("")
+TSTPY
+  mk_build="${mk_build}uv sync${nl}"
+  mk_test="${mk_test}uv run pytest -q${nl}"
+  mk_lint="${mk_lint}uv run ruff check .${nl}"
+  mk_fmt="${mk_fmt}uv run ruff format .${nl}"
+  raw_cmds="${raw_cmds}- Python: \`uv sync\`, \`uv run pytest -q\`, \`uv run ruff check .\`${nl}"
+  run_steps="${run_steps}- Python: install uv (https://docs.astral.sh/uv/), then \`make test\`${nl}"
+  ci_setup="${ci_setup}      - uses: astral-sh/setup-uv@v5${nl}      - run: uv sync${nl}"
   add_tv "python $PY_VER"
 fi
 
+# ---- Go ---------------------------------------------------------------------
 if [ -n "$GO_VER" ]; then
-  if [ ! -e go.mod ] || [ "$FORCE" -eq 1 ]; then
-    gv="$GO_VER"; [ "$GO_VER" = "latest" ] && gv="1.22"
-    cat > go.mod <<GO
+  gv="$GO_VER"; [ "$GO_VER" = "latest" ] && gv="1.22"
+  wf go.mod <<GO
 module $NAME
 
 go $gv
 GO
-    ok "go.mod (go $gv)"
-  else skip "go.mod"; fi
+  wf src/app/app.go <<'SRCGO'
+// Package app is a placeholder. EN: replace with your code. VI: thay bang code cua ban.
+package app
+
+import "errors"
+
+// Greet returns a greeting, or an error when name is empty.
+func Greet(name string) (string, error) {
+	if name == "" {
+		return "", errors.New("name is required")
+	}
+	return "Hello, " + name, nil
+}
+SRCGO
+  wf src/app/app_test.go <<'TSTGO'
+package app
+
+import "testing"
+
+func TestGreet(t *testing.T) {
+	got, err := Greet("world")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "Hello, world" {
+		t.Fatalf("got %q, want %q", got, "Hello, world")
+	}
+}
+
+func TestGreetRejectsEmptyName(t *testing.T) {
+	if _, err := Greet(""); err == nil {
+		t.Fatal("expected an error for an empty name")
+	}
+}
+TSTGO
+  mk_build="${mk_build}go build ./...${nl}"
+  mk_test="${mk_test}go test ./...${nl}"
+  mk_lint="${mk_lint}go vet ./...${nl}"
+  mk_fmt="${mk_fmt}gofmt -w .${nl}"
+  raw_cmds="${raw_cmds}- Go: \`go build ./...\`, \`go test ./...\`, \`go vet ./...\`${nl}"
+  run_steps="${run_steps}- Go: \`make test\`${nl}"
+  ci_setup="${ci_setup}      - uses: actions/setup-go@v5${nl}        with:${nl}          go-version-file: go.mod${nl}"
   add_tv "golang $GO_VER"
 fi
 
-[ -n "$JAVA_VER" ] && add_tv "java $JAVA_VER"
+# ---- Java + Maven + JUnit 5 -------------------------------------------------
+if [ -n "$JAVA_VER" ]; then
+  jv="$JAVA_VER"; [ "$JAVA_VER" = "latest" ] && jv="21"
+  wf pom.xml <<POM
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>$NAME</artifactId>
+  <version>0.1.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.release>$jv</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.11.3</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.2</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+POM
+  wf src/main/java/app/Greeter.java <<'SRCJAVA'
+package app;
+
+/** EN: Replace with your code. VI: Thay bang code cua ban. */
+public final class Greeter {
+    private Greeter() {}
+
+    public static String greet(String name) {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("name is required");
+        }
+        return "Hello, " + name;
+    }
+}
+SRCJAVA
+  wf src/test/java/app/GreeterTest.java <<'TSTJAVA'
+package app;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
+
+class GreeterTest {
+    @Test
+    void greetsByName() {
+        assertEquals("Hello, world", Greeter.greet("world"));
+    }
+
+    @Test
+    void rejectsEmptyName() {
+        assertThrows(IllegalArgumentException.class, () -> Greeter.greet(""));
+    }
+}
+TSTJAVA
+  mk_build="${mk_build}mvn -q -B compile${nl}"
+  mk_test="${mk_test}mvn -q -B test${nl}"
+  mk_lint="${mk_lint}mvn -q -B validate${nl}"
+  raw_cmds="${raw_cmds}- Java: \`mvn -q -B test\`, \`mvn -q -B compile\` (Maven, JUnit 5)${nl}"
+  run_steps="${run_steps}- Java: \`make test\`${nl}"
+  ci_setup="${ci_setup}      - uses: actions/setup-java@v4${nl}        with:${nl}          distribution: temurin${nl}          java-version: '$jv'${nl}      - run: mvn -q -B -DskipTests compile${nl}"
+  add_tv "java $JAVA_VER"
+fi
 
 if [ -n "$tool_versions" ]; then
   if [ ! -e .tool-versions ] || [ "$FORCE" -eq 1 ]; then
@@ -1012,6 +1226,91 @@ if [ -n "$tool_versions" ]; then
     ok ".tool-versions (mise/asdf)"
   else skip ".tool-versions"; fi
 fi
+
+# =============================================================================
+# 8b) One entry point: Makefile + AGENTS.md + CI
+# EN: Humans, hooks, CI and agents all run the same targets.
+# VI: Nguoi, hook, CI va agent deu chay cung mot target.
+# =============================================================================
+none_msg="No command configured for this target. Edit the Makefile."
+mk_body() {
+  if [ -z "$1" ]; then printf '\t@echo "%s"\n\t@exit 1\n' "$none_msg"
+  else printf '%s' "$1" | awk 'NF { printf "\t%s\n", $0 }'; fi
+}
+{
+  printf '%s\n' '# EN: The one entry point. Humans, hooks, CI and agents run these.' \
+                '# VI: Cua vao duy nhat. Nguoi, hook, CI va agent deu chay cac lenh nay.' \
+                '.PHONY: check build test lint fmt' '' \
+                '# EN: check is the gate: it must pass before any task is called done.' \
+                '# VI: check la cong: phai pass truoc khi bao xong viec.' \
+                'check: lint test' ''
+  printf 'build:\n'; mk_body "$mk_build"; printf '\n'
+  printf 'test:\n';  mk_body "$mk_test";  printf '\n'
+  printf 'lint:\n';  mk_body "$mk_lint";  printf '\n'
+  printf 'fmt:\n';   mk_body "$mk_fmt"
+} > "$TMP_MAKEFILE" 2>/dev/null || true
+wf Makefile < "$TMP_MAKEFILE"
+rm -f "$TMP_MAKEFILE"
+
+[ -z "$raw_cmds" ] && raw_cmds="- No runtime selected yet. Re-run the scaffolder with -w node,python.${nl}"
+[ -z "$run_steps" ] && run_steps="- Pick a runtime first: re-run the scaffolder with -w node,python.${nl}"
+
+wf AGENTS.md <<AGENTS
+# AGENTS.md - $NAME
+
+EN: Instructions for any coding agent in this repo (Codex, Cursor, Copilot,
+Gemini CLI, Aider...). Claude Code reads CLAUDE.md, which points here.
+VI: Huong dan cho moi coding agent trong repo nay. Claude Code doc CLAUDE.md,
+file do tro ve day.
+
+## Project layout / Bo cuc
+- \`intent/\` -> why. \`specs/\` -> what. \`plans/\` -> how. One file per change.
+- \`src/\` code, \`tests/\` tests, \`evals/\` agent regression evals.
+- \`docs/\` guide, ADRs, runbooks, incidents. \`monitoring/bands.yaml\` alert bands.
+- \`.claude/\` agents, skills, hooks, permissions. Do not edit hooks or settings.
+
+## How to run / Cach chay
+$run_steps
+## Build, test, lint / Build, test, lint
+- \`make check\` - lint + test. This is the gate.
+- \`make build\`, \`make test\`, \`make lint\`, \`make fmt\`.
+Raw commands behind the targets / Lenh goc:
+$raw_cmds
+## Conventions / Quy uoc
+- Work on a branch named \`feat/<slug>\`; never commit straight to the main branch.
+- Conventional Commits, and reference the plan file in the body.
+- Keep the change inside the scope of the plan. Out-of-scope ideas go in the plan's Risks.
+
+## Do not / Khong duoc
+- Do not push, merge, deploy, or rewrite git history. A human does that.
+- Do not weaken, skip or delete a test to make a suite pass. Fix the code.
+- Do not edit \`.claude/hooks/**\` or \`.claude/settings.json\`.
+- Do not bump dependency versions unless the task says so.
+- Do not commit secrets. \`.env\` is ignored; \`.env.example\` is the template.
+
+## What done means / The nao la xong
+1. \`make check\` passes, and the output is pasted into the reply as evidence.
+2. Every acceptance criterion in the plan is met, or listed as not met.
+3. The change is committed on the feature branch after the human approves it.
+AGENTS
+
+wf .github/workflows/ci.yml <<CI
+name: CI
+# EN: Runs the same 'make check' the agent runs. Keep this green.
+# VI: Chay dung 'make check' ma agent chay. Giu cho xanh.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+$ci_setup      - run: make check
+CI
 
 # =============================================================================
 # 9) git init / Khoi tao git
