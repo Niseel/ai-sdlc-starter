@@ -114,6 +114,42 @@ jobs:
           if make test; then echo "make test passed on broken code"; exit 1; fi
           echo "make test correctly failed"
 
+  npx:
+    name: the npm wrapper runs the same scaffolder
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: sync and pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/sync-npm-package.sh
+          cd packages/create-ai-sdlc
+          npm pack
+      - name: install the tarball and run it
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install -g ./packages/create-ai-sdlc/create-ai-sdlc-*.tgz
+          create-ai-sdlc wrapped -w node,python@3.12 -d out-npx --no-git
+          test -f out-npx/Makefile
+          test -f out-npx/AGENTS.md
+          test "$(cat out-npx/.python-version)" = "3.12"
+      - name: the wrapper output matches the script's own
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash init.sh wrapped -w node,python@3.12 -d out-direct --no-git
+          diff -r out-npx out-direct
+          echo "wrapper and init.sh agree"
+
   compare:
     name: identical across operating systems
     needs: run
