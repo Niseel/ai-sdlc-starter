@@ -10,6 +10,7 @@ and a stack that builds, tests and lints itself from the first commit.
 
 [![CI](https://github.com/Niseel/ai-sdlc-starter/actions/workflows/scaffold-test.yml/badge.svg)](https://github.com/Niseel/ai-sdlc-starter/actions/workflows/scaffold-test.yml)
 [![Release](https://img.shields.io/github/v/release/Niseel/ai-sdlc-starter?color=5e30ff&labelColor=1f1737)](https://github.com/Niseel/ai-sdlc-starter/releases)
+[![npm](https://img.shields.io/npm/v/ai-sdlc-starter?color=ac91ff&labelColor=1f1737&logo=npm&logoColor=ffffff)](https://www.npmjs.com/package/ai-sdlc-starter)
 [![License](https://img.shields.io/badge/license-MIT-ac91ff?labelColor=1f1737)](LICENSE)
 [![macOS · Linux · Windows](https://img.shields.io/badge/macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-verified%20in%20CI-ddff6f?labelColor=1f1737)](https://github.com/Niseel/ai-sdlc-starter/actions/workflows/scaffold-test.yml)
 
@@ -22,6 +23,12 @@ and a stack that builds, tests and lints itself from the first commit.
 ## Install
 
 ```bash
+npx ai-sdlc-starter@latest my-app -w node
+```
+
+Or without Node, straight from the web:
+
+```bash
 curl -fsSL https://niseel.github.io/ai-sdlc-starter/init.sh | bash -s -- my-app -w node
 ```
 
@@ -31,7 +38,7 @@ powershell -ExecutionPolicy Bypass -File .\init.ps1 my-app -With node
 ```
 
 `-w node` · `python` · `go` · `java`, pinned with `@` (`-w python@3.11`), comma separated.
-Pin the scaffolder itself by swapping the URL for a tag:
+Pin the scaffolder with `npx ai-sdlc-starter@0.2.0`, or by swapping the URL for a tag:
 `raw.githubusercontent.com/Niseel/ai-sdlc-starter/v0.2.0/init.sh`.
 
 > Versions get pinned; runtimes never get downloaded — that is [mise](https://mise.jdx.dev)'s job.

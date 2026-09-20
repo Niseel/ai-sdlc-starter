@@ -70,6 +70,7 @@
 
   /* ---- Command builder --------------------------------------------------- */
   var os = store("os") || (/Win/i.test(navigator.platform || navigator.userAgent) ? "win" : "unix");
+  if (os !== "unix" && os !== "win" && os !== "npx") os = "unix";
   var src = store("src") === "pinned" ? "pinned" : "short";
   var form = $("#builder");
 
@@ -94,6 +95,7 @@
 
   function buildCommand(o, target) {
     var win = target === "win";
+    var npx = target === "npx";
     var args = [o.name];
     var withList = [];
     ["node", "python", "go", "java"].forEach(function (r) {
@@ -104,6 +106,9 @@
     if (o.nogit) args.push(win ? "-NoGit" : "--no-git");
     if (o.force) args.push(win ? "-Force" : "-f");
     var tail = args.join(" ");
+    if (npx) {
+      return "npx ai-sdlc-starter@" + (src === "pinned" ? version : "latest") + " " + tail;
+    }
     if (win) {
       return "irm " + scriptUrl("init.ps1") + " -OutFile init.ps1\n" +
         "powershell -ExecutionPolicy Bypass -File .\\init.ps1 " + tail;
