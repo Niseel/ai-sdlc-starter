@@ -1,0 +1,105 @@
+name: scaffold
+
+# EN: Proves the scaffolder runs on Linux, macOS and Windows and that both
+#     scripts write byte-identical files.
+# VI: Chung minh script chay duoc tren Linux, macOS, Windows va hai ban tao ra
+#     file giong het nhau tung byte.
+
+on:
+  push:
+    branches: ["**"]
+    paths: ["init.sh", "init.ps1", ".github/workflows/scaffold-test.yml"]
+  pull_request:
+    paths: ["init.sh", "init.ps1", ".github/workflows/scaffold-test.yml"]
+  workflow_dispatch:
+
+jobs:
+  run:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: bash - scaffold
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash init.sh demo -w node,python@3.12,go@1.22,java@21 -d out-sh --no-git
+          test -f out-sh/CLAUDE.md
+          test -f out-sh/.claude/hooks/guard-bash.sh
+          test "$(cat out-sh/.nvmrc)" = "node"
+          test "$(cat out-sh/.python-version)" = "3.12"
+          echo "files: $(find out-sh -type f | wc -l)"
+
+      - name: bash - long flags produce the same tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash init.sh --name demo --node latest --python 3.12 --go 1.22 --java 21 -d out-long --no-git
+          diff -r out-sh out-long
+
+      - name: bash - re-run is a no-op
+        shell: bash
+        run: |
+          set -euo pipefail
+          hash_tree() { find "$1" -type f | LC_ALL=C sort | xargs cat | cksum; }
+          before=$(hash_tree out-sh)
+          bash init.sh demo -w node,python@3.12,go@1.22,java@21 -d out-sh --no-git
+          after=$(hash_tree out-sh)
+          test "$before" = "$after"
+
+      - name: pwsh - scaffold
+        shell: pwsh
+        run: |
+          ./init.ps1 demo -With node,python@3.12,go@1.22,java@21 -Dir out-ps -NoGit
+          # The quoted form must behave the same way.
+          ./init.ps1 demo -With "node,python@3.12,go@1.22,java@21" -Dir out-ps-quoted -NoGit
+          # And so must the long flags.
+          ./init.ps1 -Name demo -Node latest -Python 3.12 -Go 1.22 -Java 21 -Dir out-ps-long -NoGit
+          # The script must leave the shell where it found it.
+          if ((Get-Location).Path -ne $PWD.Path) { throw "init.ps1 changed the caller location" }
+          if (-not (Test-Path out-ps/CLAUDE.md)) { throw "out-ps/CLAUDE.md missing" }
+
+      - name: compare bash vs pwsh output (byte for byte)
+        shell: bash
+        run: |
+          set -euo pipefail
+          diff -r out-sh out-ps
+          diff -r out-ps out-ps-quoted
+          diff -r out-ps out-ps-long
+          echo "bash and pwsh agree on $(find out-sh -type f | wc -l) files"
+
+      - name: manifest for cross-OS comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi; }
+          cd out-sh
+          find . -type f | LC_ALL=C sort | while read -r f; do
+            printf '%s  %s\n' "$(sha "$f" | cut -d' ' -f1)" "$f"
+          done > ../manifest.txt
+          wc -l ../manifest.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manifest-${{ matrix.os }}
+          path: manifest.txt
+
+  compare:
+    name: identical across operating systems
+    needs: run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: manifests }
+      - name: diff the manifests
+        run: |
+          set -euo pipefail
+          ls -R manifests
+          diff manifests/manifest-ubuntu-latest/manifest.txt manifests/manifest-macos-latest/manifest.txt
+          diff manifests/manifest-ubuntu-latest/manifest.txt manifests/manifest-windows-latest/manifest.txt
+          echo "All three operating systems produced identical files."

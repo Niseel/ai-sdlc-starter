@@ -1,0 +1,172 @@
+/* =============================================================================
+   Design tokens - "Midnight Glass"
+   Design language measured from https://www.orchid.security/ on 2026-09-19
+   (live computed styles at 1440 px + designlang 12.21.0 extraction).
+   Only these values may be used for color, type, space, radius, shadow,
+   gradient and motion. See DESIGN.md for the rules.
+
+   Fonts (load once, in <head>):
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;700&family=Inconsolata:wght@400;600&display=swap" rel="stylesheet">
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* ---- Primitives: palette (raw values, do not use directly in UI) ------- */
+  --c-midnight: #080023;        /* page background */
+  --c-ink: #1d1d1b;             /* text on light controls */
+  --c-white: #ffffff;
+  --c-off-white: #ededed;       /* default text */
+  --c-grey: #9999a7;            /* subtle text */
+  --c-violet: #5e30ff;          /* brand action */
+  --c-violet-400: #7655dd;      /* button gradient top */
+  --c-violet-600: #582cdf;      /* button gradient bottom */
+  --c-violet-hover-400: #805fe6;
+  --c-violet-hover-600: #6136e7;
+  --c-lavender: #ac91ff;        /* accent, links, rings */
+  --c-lavender-500: #8e6fff;    /* gradient text, icon fills */
+  --c-lime: #ddff6f;            /* highlight, max one per view */
+  --c-turquoise: #7dd7e0;       /* info, data viz */
+  --c-pink: #ff8bfb;            /* data viz, decoration only */
+  --c-card-top: #1f1737;
+  --c-card-bottom: #302948;
+  --c-card-corner: #312948;
+  --c-step-top: #0c042c;
+  --c-step-bottom: #221e4d;
+  --c-tag-top: #24113d;
+  --c-tag-bottom: #352154;
+  --c-tag-ring-top: #8e6ffe;
+  --c-tag-ring-bottom: #3b2b70;
+  --c-light-grey: #cfcfcf;
+  --c-glow-violet: #3a1fb8;     /* background orbs */
+  --c-glow-blue: #1f3a8f;       /* background orbs */
+
+  /* ---- Semantic: color ---------------------------------------------------- */
+  --bg-page: var(--c-midnight);
+  --bg-band: rgb(255 255 255 / 0.05);         /* full-width tinted section */
+  --surface-code: var(--c-step-top);
+  --surface-control: rgb(255 255 255 / 0.05);
+  --surface-control-hover: rgb(255 255 255 / 0.1);
+  --text: var(--c-off-white);
+  --text-strong: var(--c-white);
+  --text-muted: rgb(255 255 255 / 0.7);
+  --text-subtle: var(--c-grey);
+  --text-on-light: var(--c-ink);
+  --accent: var(--c-lavender);
+  --accent-strong: var(--c-lavender-500);
+  --action: var(--c-violet);
+  --highlight: var(--c-lime);
+  --info: var(--c-turquoise);
+  --decor: var(--c-pink);
+  --border-hairline: rgb(172 145 255 / 0.15);
+  --border-faint: rgb(172 145 255 / 0.1);
+  --border-soft: rgb(255 255 255 / 0.2);
+  --icon-fill: rgb(142 111 255 / 0.3);
+  --orb-violet: var(--c-glow-violet);
+  --orb-blue: var(--c-glow-blue);
+  --focus-ring: var(--c-lavender);
+  --selection: rgb(172 145 255 / 0.35);
+
+  /* ---- Gradients ---------------------------------------------------------- */
+  --grad-btn-primary: linear-gradient(var(--c-violet-400), var(--c-violet-600));
+  --grad-btn-primary-hover: linear-gradient(var(--c-violet-hover-400), var(--c-violet-hover-600));
+  --grad-btn-secondary: linear-gradient(var(--c-white), var(--c-light-grey));
+  --grad-btn-ring: linear-gradient(rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.1));
+  --grad-card: linear-gradient(var(--c-card-top), var(--c-card-bottom));
+  --grad-card-angled: linear-gradient(220deg, var(--c-card-corner) 6%, var(--c-card-top) 88%);
+  --grad-card-ring: linear-gradient(rgb(172 145 255 / 0.1), rgb(172 145 255 / 0.2));
+  --grad-glass: linear-gradient(rgb(255 255 255 / 0), rgb(255 255 255 / 0.05));
+  --grad-glass-angled: linear-gradient(232deg, rgb(255 255 255 / 0), rgb(255 255 255 / 0.1) 64%);
+  --grad-step: linear-gradient(var(--c-step-top), var(--c-step-bottom));
+  --grad-tag: linear-gradient(var(--c-tag-top), var(--c-tag-bottom));
+  --grad-tag-ring: linear-gradient(var(--c-tag-ring-top), var(--c-tag-ring-bottom));
+  --grad-text-fade: linear-gradient(to bottom, rgb(237 237 237 / 0.3), var(--c-off-white));
+  --grad-text-lavender: linear-gradient(to bottom, rgb(142 111 255 / 0.3), var(--c-lavender-500));
+  --grad-hairline: linear-gradient(90deg, rgb(255 255 255 / 0), rgb(255 255 255 / 0.1) 50%, rgb(255 255 255 / 0));
+  --grad-connector: linear-gradient(180deg, rgb(172 145 255 / 0.5), rgb(172 145 255 / 0.05));
+
+  /* ---- Typography --------------------------------------------------------- */
+  --font-sans: "Be Vietnam Pro", Arial, sans-serif;   /* stands in for Aeonik (commercial) */
+  --font-mono: "Inconsolata", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --fs-display: clamp(4.5rem, 10.4vw, 9.375rem);   /* 72 -> 150 px, stats only */
+  --fs-h1: clamp(2.5rem, 5vw, 4.5rem);             /* 40 -> 72 px */
+  --fs-h2: clamp(2rem, 3.4vw, 3rem);               /* 32 -> 48 px */
+  --fs-h3: clamp(1.625rem, 2.3vw, 2rem);           /* 26 -> 32 px */
+  --fs-h4: clamp(1.25rem, 1.7vw, 1.5rem);          /* 20 -> 24 px */
+  --fs-lead: clamp(1.125rem, 1.4vw, 1.25rem);      /* 18 -> 20 px */
+  --fs-body: clamp(1rem, 0.95rem + 0.2vw, 1.125rem); /* 16 -> 18 px */
+  --fs-small: 1rem;                                /* 16 px */
+  --fs-xs: 0.875rem;                               /* 14 px */
+  --fs-code: 1.0625rem;                            /* 17 px, Inconsolata runs small */
+
+  --fw-light: 300;     /* display numbers */
+  --fw-regular: 400;   /* headings and body */
+  --fw-medium: 500;    /* buttons, labels */
+  --fw-bold: 700;      /* tiny labels only */
+
+  --lh-display: 1.05;
+  --lh-heading: 1.1;
+  --lh-snug: 1.2;
+  --lh-body: 1.4;
+  --lh-ui: 1;
+
+  --ls-display: -0.01em;
+  --ls-label: 0.01em;
+
+  --measure: 60ch;
+
+  /* ---- Space and layout --------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+  --space-9: 64px;
+  --space-10: 100px;
+
+  --section-y: clamp(64px, 8vw, 100px);
+  --gutter: clamp(20px, 3vw, 40px);
+  --container: 1116px;
+  --container-wide: 1240px;
+  --grid-gap: var(--space-7);
+
+  /* ---- Shape -------------------------------------------------------------- */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-card: 24px;
+  --radius-panel: 32px;
+  --radius-pill: 500px;
+  --radius-round: 50%;
+  --ring-width: 1px;
+  --ring-width-card: 1.5px;
+
+  /* ---- Depth -------------------------------------------------------------- */
+  --shadow-sm: 0 0 5px rgb(0 0 0 / 0.2);
+  --glow-lavender: 0 6.5px 65px rgb(172 145 255 / 0.4);
+  --glow-lavender-lg: 0 9.5px 97px rgb(172 145 255 / 0.4);
+  --glow-lime: 0 0 85px rgb(221 255 111 / 0.35);
+  --blur-glass: 40px;
+  --blur-control: 30px;
+  --blur-panel: 8px;
+  --blur-orb: 120px;
+
+  /* ---- Motion ------------------------------------------------------------- */
+  --dur-fast: 150ms;
+  --dur-base: 200ms;
+  --dur-slow: 300ms;
+  --dur-reveal: 600ms;
+  --ease-out: cubic-bezier(0, 0, 0.58, 1);
+  --reveal-distance: 24px;
+
+  /* ---- Layers ------------------------------------------------------------- */
+  --z-decor: 0;
+  --z-content: 1;
+  --z-nav: 100;
+}

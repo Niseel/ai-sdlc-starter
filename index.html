@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI-SDLC Starter</title>
+  <meta name="description" content="One command scaffolds Anthropic's AI-Native SDLC loop (Plan, Design, Build, Test, Deploy, Maintain) with Claude Code agents, skills and guardrail hooks. macOS, Linux and Windows.">
+  <meta property="og:title" content="AI-SDLC Starter">
+  <meta property="og:description" content="Start every project the AI-Native way. One command, six stages, two human gates.">
+  <meta property="og:type" content="website">
+  <!-- Optional: "owner/repo". Empty = auto-detect from the GitHub Pages URL. -->
+  <meta name="repo" content="Niseel/ai-sdlc-starter">
+  <meta name="theme-color" content="#080023">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;700&family=Inconsolata:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="design-system/tokens.css">
+  <link rel="stylesheet" href="design-system/components.css">
+  <link rel="stylesheet" href="assets/site.css">
+  <script>
+    /* Pick language before paint: saved choice, else browser language. */
+    (function () {
+      var lang = null;
+      try { lang = localStorage.getItem("lang"); } catch (e) {}
+      if (lang !== "en" && lang !== "vi") lang = /^vi\b/i.test(navigator.language || "") ? "vi" : "en";
+      document.documentElement.setAttribute("data-lang", lang);
+      document.documentElement.lang = lang;
+    })();
+  </script>
+  <script src="assets/site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main"><span class="en">Skip to content</span><span class="vi">Bỏ qua điều hướng</span></a>
+
+  <!-- ================================================================ NAV -->
+  <header class="nav" id="top">
+    <div class="container container--wide nav__inner">
+      <a class="brand" href="#top" aria-label="AI-SDLC Starter">
+        <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true"><use href="#i-mark"/></svg>
+        <span>AI-SDLC Starter</span>
+      </a>
+      <nav class="nav__links" aria-label="Primary">
+        <a href="#loop"><span class="en">The Loop</span><span class="vi">Vòng lặp</span></a>
+        <a href="#install"><span class="en">Install</span><span class="vi">Cài đặt</span></a>
+        <a href="#kit"><span class="en">What You Get</span><span class="vi">Bạn nhận gì</span></a>
+        <a href="#workflow"><span class="en">Workflow</span><span class="vi">Quy trình</span></a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="nav__actions">
+        <div class="tabs lang-switch" role="tablist" aria-label="Language">
+          <button type="button" role="tab" data-set-lang="en" aria-selected="true">EN</button>
+          <button type="button" role="tab" data-set-lang="vi" aria-selected="false">VI</button>
+        </div>
+        <a class="btn btn--secondary btn--sm" data-gh="repo" href="https://github.com/" aria-label="GitHub">
+          <svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-github"/></svg><span class="btn__label">GitHub</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ============================================================== HERO -->
+    <section class="hero">
+      <div class="orb orb--violet hero__orb-a" aria-hidden="true"></div>
+      <div class="orb orb--blue hero__orb-b" aria-hidden="true"></div>
+      <div class="container hero__inner">
+        <span class="tag reveal"><span class="tag__dot" aria-hidden="true"></span>
+          <span>v<span data-version>0.1.0</span> · <span class="en">Built on Anthropic's AI-Native SDLC Playbook</span><span class="vi">Dựa trên AI-Native SDLC Playbook của Anthropic</span></span>
+        </span>
+        <h1 class="h1 hero__title reveal">
+          <span class="en">Start Every Project <span class="text-lavender">the AI-Native Way</span></span>
+          <span class="vi">Khởi động mọi dự án <span class="text-lavender">theo chuẩn AI-Native</span></span>
+        </h1>
+        <p class="lead hero__lead reveal">
+          <span class="en">One command scaffolds the six-stage loop — intent, spec, plan, tests, review, monitoring — plus the Claude Code agents, skills and guardrail hooks that run it. Same output on macOS, Linux and Windows.</span>
+          <span class="vi">Một lệnh dựng sẵn vòng lặp sáu giai đoạn — intent, spec, plan, test, review, monitoring — kèm bộ agent, skill và hook bảo vệ của Claude Code để vận hành. Kết quả giống hệt nhau trên macOS, Linux và Windows.</span>
+        </p>
+        <div class="btn-group reveal">
+          <a class="btn btn--primary" href="#install"><span class="en">Get Started</span><span class="vi">Bắt đầu ngay</span></a>
+          <a class="btn btn--secondary" href="#loop"><span class="en">See How It Works</span><span class="vi">Xem cách hoạt động</span></a>
+        </div>
+
+        <div class="quick reveal">
+          <div class="quick__bar">
+            <div class="tabs" role="tablist" aria-label="Operating system">
+              <button type="button" role="tab" data-os="unix" aria-selected="true">macOS / Linux</button>
+              <button type="button" role="tab" data-os="win" aria-selected="false">Windows</button>
+            </div>
+            <button type="button" class="copy-btn" data-copy="#quick-cmd">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-copy"/></svg><span class="copy-btn__text"><span class="en">Copy</span><span class="vi">Sao chép</span></span>
+            </button>
+          </div>
+          <pre class="codeblock quick__code"><code id="quick-cmd" data-cmd="quick"></code></pre>
+        </div>
+      </div>
+
+      <!-- Terminal preview: real output of init.sh -->
+      <div class="container hero__terminal reveal">
+        <div class="terminal">
+          <div class="terminal__bar" aria-hidden="true"><i></i><i></i><i></i><span>~/my-app — bash</span></div>
+          <pre class="terminal__body" aria-label="Example output of the scaffolder"><code><span class="t-line"><span class="prompt">$</span> bash init.sh my-app -w node,python@3.12</span>
+<span class="t-line"><span class="info">[info]</span> init-ai-sdlc 0.1.0</span>
+<span class="t-line"><span class="info">[info]</span> Project / Du an: my-app</span>
+<span class="t-line"><span class="info">[info]</span> Node:   latest · Python: 3.12</span>
+<span class="t-line"><span class="ok">[ok]</span>   CLAUDE.md</span>
+<span class="t-line"><span class="ok">[ok]</span>   intent/_TEMPLATE.md</span>
+<span class="t-line"><span class="ok">[ok]</span>   specs/_TEMPLATE.md</span>
+<span class="t-line"><span class="ok">[ok]</span>   plans/_TEMPLATE.md</span>
+<span class="t-line"><span class="ok">[ok]</span>   monitoring/bands.yaml</span>
+<span class="t-line"><span class="ok">[ok]</span>   .claude/agents/planner.md <span class="comment"># + coder, tester, reviewer, verifier</span></span>
+<span class="t-line"><span class="ok">[ok]</span>   .claude/skills/feature/SKILL.md</span>
+<span class="t-line"><span class="ok">[ok]</span>   .claude/hooks/guard-bash.sh</span>
+<span class="t-line"><span class="ok">[ok]</span>   .github/workflows/agent-evals.yml</span>
+<span class="t-line"><span class="ok">[ok]</span>   package.json (node latest)</span>
+<span class="t-line"><span class="ok">[ok]</span>   pyproject.toml (python 3.12)</span>
+<span class="t-line"><span class="ok">[ok]</span>   AI-Native SDLC scaffold ready <span class="comment"># 41 files</span></span>
+<span class="t-line"><span class="prompt">$</span> claude <span class="comment"># then: /intent &lt;your idea&gt;</span><span class="caret" aria-hidden="true"></span></span></code></pre>
+        </div>
+      </div>
+
+      <div class="container">
+        <ul class="works-with reveal" role="list" aria-label="Works with">
+          <li>macOS</li><li>Linux</li><li>Windows</li><li>bash</li><li>PowerShell</li><li>Node</li><li>Python</li><li>Go</li><li>Java</li><li>Claude Code</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ========================================================== THE LOOP -->
+    <section class="section" id="loop">
+      <div class="container">
+        <header class="section__head reveal">
+          <span class="tag"><span class="en">The Loop</span><span class="vi">Vòng lặp</span></span>
+          <h2 class="h1"><span class="en">Six Stages, Six Artifacts</span><span class="vi">Sáu giai đoạn, sáu artifact</span></h2>
+          <p class="lead">
+            <span class="en">Every stage commits one version-controlled file that the next stage reads. Agents do the work; you stay above the loop at two gates.</span>
+            <span class="vi">Mỗi giai đoạn commit một file vào git để giai đoạn sau đọc. Agent làm việc; bạn đứng trên vòng lặp ở hai cổng duyệt.</span>
+          </p>
+        </header>
+
+        <div class="loop reveal">
+          <div class="loop__stages" role="tablist" aria-label="Stages">
+            <button type="button" role="tab" id="st-1" aria-controls="sp-1" aria-selected="true"><b>01</b><span>Plan</span><code>intent.md</code></button>
+            <button type="button" role="tab" id="st-2" aria-controls="sp-2" aria-selected="false" tabindex="-1"><b>02</b><span>Design</span><code>spec.md</code></button>
+            <button type="button" role="tab" id="st-3" aria-controls="sp-3" aria-selected="false" tabindex="-1"><b>03</b><span>Build</span><code>plan.md</code></button>
+            <button type="button" role="tab" id="st-4" aria-controls="sp-4" aria-selected="false" tabindex="-1"><b>04</b><span>Test</span><code>tests + evals</code></button>
+            <button type="button" role="tab" id="st-5" aria-controls="sp-5" aria-selected="false" tabindex="-1"><b>05</b><span>Deploy</span><code>REVIEW.md</code></button>
+            <button type="button" role="tab" id="st-6" aria-controls="sp-6" aria-selected="false" tabindex="-1"><b>06</b><span>Maintain</span><code>bands.yaml</code></button>
+          </div>
+
+          <div class="loop__panels">
+            <article class="card card--step loop__panel" role="tabpanel" id="sp-1" aria-labelledby="st-1">
+              <div class="loop__main">
+                <p class="label"><span class="en">Stage 1 · Plan</span><span class="vi">Giai đoạn 1 · Plan</span></p>
+                <h3 class="h3"><span class="en">Capture the Intent</span><span class="vi">Ghi lại intent</span></h3>
+                <p class="muted"><span class="en">Turn an idea, ticket or incident into something concrete: problem, outcome, affected users, constraints, open questions. No design, no code yet.</span><span class="vi">Biến ý tưởng, ticket hay sự cố thành thứ cụ thể: vấn đề, kết quả mong muốn, người dùng liên quan, ràng buộc, câu hỏi mở. Chưa thiết kế, chưa code.</span></p>
+              </div>
+              <dl class="loop__meta">
+                <div><dt><span class="en">Run</span><span class="vi">Lệnh</span></dt><dd><code class="code-inline">/intent Add password reset</code></dd></div>
+                <div><dt><span class="en">Writes</span><span class="vi">Tạo ra</span></dt><dd><code class="code-inline">intent/&lt;slug&gt;.md</code></dd></div>
+                <div><dt><span class="en">Who</span><span class="vi">Ai làm</span></dt><dd><span class="en">You + Claude, brainstorming</span><span class="vi">Bạn + Claude cùng brainstorm</span></dd></div>
+              </dl>
+            </article>
+
+            <article class="card card--step loop__panel" role="tabpanel" id="sp-2" aria-labelledby="st-2" hidden>
+              <div class="loop__main">
+                <p class="label"><span class="en">Stage 2 · Design</span><span class="vi">Giai đoạn 2 · Design</span></p>
+                <h3 class="h3"><span class="en">Write the Spec</span><span class="vi">Viết spec</span></h3>
+                <p class="muted"><span class="en">Requirements and design the team can plan against. Policy skills — security, brand, UX, compliance — are applied, and conflicts between them are flagged, not hidden.</span><span class="vi">Yêu cầu và thiết kế đủ rõ để lên kế hoạch. Các policy skill — bảo mật, thương hiệu, UX, tuân thủ — được áp dụng, xung đột giữa chúng được đánh dấu rõ.</span></p>
+              </div>
+              <dl class="loop__meta">
+                <div><dt><span class="en">Run</span><span class="vi">Lệnh</span></dt><dd><code class="code-inline">/spec intent/&lt;slug&gt;.md</code></dd></div>
+                <div><dt><span class="en">Writes</span><span class="vi">Tạo ra</span></dt><dd><code class="code-inline">specs/&lt;slug&gt;.md</code></dd></div>
+                <div><dt><span class="en">Uses</span><span class="vi">Dùng</span></dt><dd><code class="code-inline">secure-api-review</code> <span class="en">+ your policy skills</span><span class="vi">+ policy skill của bạn</span></dd></div>
+              </dl>
+            </article>
+
+            <article class="card card--step loop__panel" role="tabpanel" id="sp-3" aria-labelledby="st-3" hidden>
+              <div class="loop__main">
+                <p class="label"><span class="en">Stage 3 · Build</span><span class="vi">Giai đoạn 3 · Build</span></p>
+                <h3 class="h3"><span class="en">Plan Before Code</span><span class="vi">Lập kế hoạch trước khi code</span></h3>
+                <p class="muted"><span class="en">The planner turns the spec into tasks, risks and proof. You approve it at <strong>Gate 1</strong>. Then the coder works on a <code class="code-inline">feat/</code> branch — in parallel where files don't overlap.</span><span class="vi">Planner chia spec thành task, rủi ro và bằng chứng cần có. Bạn duyệt ở <strong>Cổng 1</strong>. Sau đó coder làm trên nhánh <code class="code-inline">feat/</code> — chạy song song khi các file không chồng nhau.</span></p>
+              </div>
+              <dl class="loop__meta">
+                <div><dt><span class="en">Run</span><span class="vi">Lệnh</span></dt><dd><code class="code-inline">/feature specs/&lt;slug&gt;.md</code></dd></div>
+                <div><dt><span class="en">Writes</span><span class="vi">Tạo ra</span></dt><dd><code class="code-inline">plans/&lt;slug&gt;.md</code> + <code class="code-inline">src/</code></dd></div>
+                <div><dt><span class="en">Agents</span><span class="vi">Agent</span></dt><dd>planner → coder</dd></div>
+              </dl>
+            </article>
+
+            <article class="card card--step loop__panel" role="tabpanel" id="sp-4" aria-labelledby="st-4" hidden>
+              <div class="loop__main">
+                <p class="label"><span class="en">Stage 4 · Test</span><span class="vi">Giai đoạn 4 · Test</span></p>
+                <h3 class="h3"><span class="en">Prove It Works</span><span class="vi">Chứng minh nó chạy đúng</span></h3>
+                <p class="muted"><span class="en">The tester runs up to three rounds; product bugs go back to the coder. The <code class="code-inline">protect-tests</code> hook stops anyone weakening a test to make it pass. Agent regression evals run in CI.</span><span class="vi">Tester chạy tối đa ba vòng; lỗi sản phẩm trả về cho coder. Hook <code class="code-inline">protect-tests</code> chặn việc sửa test cho dễ qua. Eval hồi quy cho agent chạy trong CI.</span></p>
+              </div>
+              <dl class="loop__meta">
+                <div><dt><span class="en">Runs in</span><span class="vi">Chạy trong</span></dt><dd><code class="code-inline">/feature</code></dd></div>
+                <div><dt><span class="en">Writes</span><span class="vi">Tạo ra</span></dt><dd><code class="code-inline">tests/</code> + <code class="code-inline">evals/</code></dd></div>
+                <div><dt>CI</dt><dd><code class="code-inline">agent-evals.yml</code></dd></div>
+              </dl>
+            </article>
+
+            <article class="card card--step loop__panel" role="tabpanel" id="sp-5" aria-labelledby="st-5" hidden>
+              <div class="loop__main">
+                <p class="label"><span class="en">Stage 5 · Deploy</span><span class="vi">Giai đoạn 5 · Deploy</span></p>
+                <h3 class="h3"><span class="en">Review, Then You Commit</span><span class="vi">Review, rồi bạn commit</span></h3>
+                <p class="muted"><span class="en">The reviewer checks the diff against <code class="code-inline">REVIEW.md</code> in up to two rounds. You approve the commit at <strong>Gate 2</strong>. It commits locally only — pushing and production deploys stay human.</span><span class="vi">Reviewer soát diff theo <code class="code-inline">REVIEW.md</code>, tối đa hai vòng. Bạn duyệt commit ở <strong>Cổng 2</strong>. Chỉ commit trên máy — push và deploy production luôn do người làm.</span></p>
+              </div>
+              <dl class="loop__meta">
+                <div><dt><span class="en">Policy</span><span class="vi">Chính sách</span></dt><dd><code class="code-inline">REVIEW.md</code></dd></div>
+                <div><dt><span class="en">Guard</span><span class="vi">Bảo vệ</span></dt><dd><code class="code-inline">production-gate</code></dd></div>
+                <div><dt>CI</dt><dd><code class="code-inline">claude-review.yml</code></dd></div>
+              </dl>
+            </article>
+
+            <article class="card card--step loop__panel" role="tabpanel" id="sp-6" aria-labelledby="st-6" hidden>
+              <div class="loop__main">
+                <p class="label"><span class="en">Stage 6 · Maintain</span><span class="vi">Giai đoạn 6 · Maintain</span></p>
+                <h3 class="h3"><span class="en">Watch With Bands, Not Vibes</span><span class="vi">Giám sát bằng ngưỡng, không cảm tính</span></h3>
+                <p class="muted"><span class="en">Deterministic bands decide when Claude is called and what it may do: log, diagnose, or propose a PR or rollback. No model in detection. Every incident becomes the next intent.</span><span class="vi">Các ngưỡng tất định quyết định khi nào gọi Claude và Claude được làm gì: ghi log, chẩn đoán, hoặc đề xuất PR / rollback. Không dùng model để phát hiện. Mỗi sự cố thành intent kế tiếp.</span></p>
+              </div>
+              <dl class="loop__meta">
+                <div><dt><span class="en">Config</span><span class="vi">Cấu hình</span></dt><dd><code class="code-inline">monitoring/bands.yaml</code></dd></div>
+                <div><dt><span class="en">Records</span><span class="vi">Hồ sơ</span></dt><dd><code class="code-inline">docs/incidents/</code></dd></div>
+                <div><dt><span class="en">Runbook</span><span class="vi">Runbook</span></dt><dd><code class="code-inline">rollback-deploy.md</code></dd></div>
+              </dl>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ NUMBERS -->
+    <section class="section section--band" id="numbers" aria-label="In numbers">
+      <div class="container">
+        <div class="bento">
+          <article class="card bento__big reveal">
+            <p class="stat__label"><span class="en">Files from one command</span><span class="vi">File từ một lệnh duy nhất</span></p>
+            <p class="stat__value"><span class="num" data-count="41">41</span></p>
+            <p class="stat__note"><span class="en">36 by default, 41 with Node and Python pinned. Byte-for-byte identical from bash and PowerShell; re-running skips what exists unless you pass <code class="code-inline">--force</code>.</span><span class="vi">Mặc định 36 file, 41 file khi ghim Node và Python. Bash và PowerShell cho ra giống hệt từng byte; chạy lại sẽ bỏ qua file đã có, trừ khi dùng <code class="code-inline">--force</code>.</span></p>
+          </article>
+          <article class="card card--angled reveal">
+            <p class="stat__label"><span class="en">Subagents, one job each</span><span class="vi">Subagent, mỗi con một việc</span></p>
+            <p class="stat__value"><span class="num" data-count="5">5</span></p>
+            <p class="stat__note">planner · coder · tester · reviewer · verifier</p>
+          </article>
+          <article class="card card--angled reveal">
+            <p class="stat__label"><span class="en">Human gates, never skipped</span><span class="vi">Cổng duyệt của người, không bỏ qua</span></p>
+            <p class="stat__value"><span class="num" data-count="2">2</span></p>
+            <p class="stat__note"><span class="en">Approve the plan. Approve the commit. Nothing is pushed for you.</span><span class="vi">Duyệt plan. Duyệt commit. Không có gì tự push.</span></p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ INSTALL -->
+    <section class="section" id="install">
+      <div class="orb orb--blue install__orb" aria-hidden="true"></div>
+      <div class="container">
+        <header class="section__head reveal">
+          <span class="tag"><span class="en">Install</span><span class="vi">Cài đặt</span></span>
+          <h2 class="h1"><span class="en">Pin Your Stack in One Line</span><span class="vi">Ghim stack của bạn trong một dòng</span></h2>
+          <p class="lead">
+            <span class="en">Pick your runtimes and copy the command. The release tag lives in the URL, so the same version always produces the same scaffold.</span>
+            <span class="vi">Chọn runtime rồi sao chép lệnh. Tag phiên bản nằm ngay trong URL, nên cùng một phiên bản luôn cho ra cùng một bộ khung.</span>
+          </p>
+        </header>
+
+        <div class="builder reveal">
+          <form class="card builder__form" id="builder" autocomplete="off">
+            <div class="tabs builder__os" role="tablist" aria-label="Operating system">
+              <button type="button" role="tab" data-os="unix" aria-selected="true">macOS / Linux</button>
+              <button type="button" role="tab" data-os="win" aria-selected="false">Windows</button>
+            </div>
+            <label class="field builder__wide">
+              <span><span class="en">Project name</span><span class="vi">Tên dự án</span></span>
+              <input class="input" name="name" value="my-app" maxlength="60" spellcheck="false" pattern="[A-Za-z0-9._\-]+">
+            </label>
+            <label class="field">
+              <span>Node</span>
+              <select class="input" name="node"><option value="">—</option><option selected>latest</option><option>22</option><option>20</option></select>
+            </label>
+            <label class="field">
+              <span>Python</span>
+              <select class="input" name="python"><option value="">—</option><option>3.13</option><option selected>3.12</option><option>3.11</option><option>3.10</option></select>
+            </label>
+            <label class="field">
+              <span>Go</span>
+              <select class="input" name="go"><option value="">—</option><option>latest</option><option>1.22</option></select>
+            </label>
+            <label class="field">
+              <span>Java</span>
+              <select class="input" name="java"><option value="">—</option><option>21</option><option>17</option></select>
+            </label>
+            <label class="check"><input type="checkbox" name="nogit"><span><span class="en">Skip <code class="code-inline">git init</code></span><span class="vi">Bỏ qua <code class="code-inline">git init</code></span></span></label>
+            <label class="check"><input type="checkbox" name="force"><span><span class="en">Overwrite existing files</span><span class="vi">Ghi đè file đã có</span></span></label>
+          </form>
+
+          <div class="builder__out">
+            <div class="builder__outhead">
+              <div class="tabs" role="tablist" aria-label="Source">
+                <button type="button" role="tab" data-src="short" aria-selected="true"><span class="en">Latest</span><span class="vi">Mới nhất</span></button>
+                <button type="button" role="tab" data-src="pinned" aria-selected="false"><span class="en">Pinned v</span><span class="vi">Ghim v</span><span data-version>0.1.0</span></button>
+              </div>
+              <button type="button" class="copy-btn" data-copy="#built-cmd">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-copy"/></svg><span class="copy-btn__text"><span class="en">Copy</span><span class="vi">Sao chép</span></span>
+              </button>
+            </div>
+            <pre class="codeblock builder__code"><code id="built-cmd" data-cmd="built"></code></pre>
+            <p class="builder__note subtle" data-src-note="short">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-info"/></svg>
+              <span class="en">Short URL, always the latest release on <code class="code-inline">main</code>. For a build that can never change, switch to the pinned tag.</span>
+              <span class="vi">URL ngắn, luôn lấy bản mới nhất trên <code class="code-inline">main</code>. Muốn kết quả không bao giờ đổi thì chuyển sang bản ghim theo tag.</span>
+            </p>
+            <p class="builder__note subtle" data-src-note="pinned" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-info"/></svg>
+              <span class="en">The tag is immutable: this exact command produces this exact scaffold, today and next year.</span>
+              <span class="vi">Tag là bất biến: đúng lệnh này luôn cho ra đúng bộ khung này, hôm nay hay sang năm.</span>
+            </p>
+            <p class="builder__note subtle">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-info"/></svg>
+              <span class="en">The script pins versions only (<code class="code-inline">.nvmrc</code>, <code class="code-inline">.python-version</code>, <code class="code-inline">.tool-versions</code>, manifests). Install runtimes with <code class="code-inline">mise install</code>, nvm or asdf.</span>
+              <span class="vi">Script chỉ ghim phiên bản (<code class="code-inline">.nvmrc</code>, <code class="code-inline">.python-version</code>, <code class="code-inline">.tool-versions</code>, manifest). Cài runtime bằng <code class="code-inline">mise install</code>, nvm hoặc asdf.</span>
+            </p>
+          </div>
+        </div>
+
+        <ol class="steps" role="list">
+          <li class="card card--step reveal">
+            <span class="steps__num">01</span>
+            <h3 class="h4"><span class="en">Run the script</span><span class="vi">Chạy script</span></h3>
+            <p class="muted"><span class="en">Needs only bash or PowerShell and git. <code class="code-inline">jq</code> is used later by the hooks.</span><span class="vi">Chỉ cần bash hoặc PowerShell và git. <code class="code-inline">jq</code> được hook dùng về sau.</span></p>
+          </li>
+          <li class="card card--step reveal">
+            <span class="steps__num">02</span>
+            <h3 class="h4"><span class="en">Fill in CLAUDE.md</span><span class="vi">Điền CLAUDE.md</span></h3>
+            <p class="muted"><span class="en">The <strong>Commands</strong> section (build, test, lint) is what lets agents verify their own work.</span><span class="vi">Mục <strong>Commands</strong> (build, test, lint) là thứ giúp agent tự kiểm chứng công việc.</span></p>
+          </li>
+          <li class="card card--step reveal">
+            <span class="steps__num">03</span>
+            <h3 class="h4"><span class="en">Start the loop</span><span class="vi">Bắt đầu vòng lặp</span></h3>
+            <p class="muted"><span class="en">Open Claude Code in the folder and run <code class="code-inline">/intent &lt;your idea&gt;</code>.</span><span class="vi">Mở Claude Code trong thư mục và chạy <code class="code-inline">/intent &lt;ý tưởng&gt;</code>.</span></p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ================================================================ KIT -->
+    <section class="section" id="kit">
+      <div class="container">
+        <header class="section__head reveal">
+          <span class="tag"><span class="en">What You Get</span><span class="vi">Bạn nhận được gì</span></span>
+          <h2 class="h1"><span class="en">A Home for Every Artifact</span><span class="vi">Mỗi artifact một chỗ đứng</span></h2>
+          <p class="lead">
+            <span class="en">A folder per stage, templates with bilingual guidance, and the Claude Code kit that operates the loop.</span>
+            <span class="vi">Mỗi giai đoạn một thư mục, template kèm hướng dẫn song ngữ, và bộ Claude Code vận hành vòng lặp.</span>
+          </p>
+        </header>
+
+        <div class="kit">
+          <div class="card card--glass kit__tree reveal">
+            <pre class="tree" aria-label="Generated project tree"><code><span class="tree__dir">your-project/</span>
+├── <span class="tree__dir">intent/</span>            <span class="comment"># 1 Plan     intent.md</span>
+├── <span class="tree__dir">specs/</span>             <span class="comment"># 2 Design   spec.md</span>
+├── <span class="tree__dir">plans/</span>             <span class="comment"># 3 Build    plan.md</span>
+├── <span class="tree__dir">src/</span>  <span class="tree__dir">tests/</span>       <span class="comment">#            code + tests</span>
+├── <span class="tree__dir">evals/</span>             <span class="comment"># 4 Test     agent evals</span>
+├── REVIEW.md          <span class="comment"># 5 Deploy   review policy</span>
+├── <span class="tree__dir">monitoring/</span>        <span class="comment"># 6 Maintain bands.yaml</span>
+├── <span class="tree__dir">docs/</span>              <span class="comment">#   guide, ADRs, runbooks</span>
+├── <span class="tree__dir">.github/workflows/</span> <span class="comment">#   evals + review CI</span>
+├── CLAUDE.md          <span class="comment">#   agent day-one context</span>
+└── <span class="tree__dir">.claude/</span>
+    ├── <span class="tree__dir">agents/</span>        <span class="comment"># 5 subagents</span>
+    ├── <span class="tree__dir">skills/</span>        <span class="comment"># /intent /spec /feature</span>
+    ├── <span class="tree__dir">hooks/</span>         <span class="comment"># 4 guardrails</span>
+    └── settings.json  <span class="comment"># allow / deny + hooks</span></code></pre>
+          </div>
+
+          <div class="kit__cards">
+            <article class="card kit__card reveal">
+              <div class="kit__cardhead"><span class="icon-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-agents"/></svg></span><h3 class="h4"><span class="en">Agents</span><span class="vi">Agent</span></h3></div>
+              <ul class="chips" role="list"><li>planner</li><li>coder</li><li>tester</li><li>reviewer</li><li>verifier</li></ul>
+              <p class="muted"><span class="en">Each starts empty and gets the artifact path — no hidden context, no "see above".</span><span class="vi">Mỗi agent bắt đầu trống và nhận đường dẫn artifact — không ngữ cảnh ẩn, không "xem ở trên".</span></p>
+            </article>
+            <article class="card kit__card reveal">
+              <div class="kit__cardhead"><span class="icon-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-skills"/></svg></span><h3 class="h4"><span class="en">Skills</span><span class="vi">Skill</span></h3></div>
+              <ul class="chips" role="list"><li>/intent</li><li>/spec</li><li>/feature</li><li>secure-api-review</li></ul>
+              <p class="muted"><span class="en"><code class="code-inline">/feature</code> is the orchestrator: plan → code → test → review, with both gates.</span><span class="vi"><code class="code-inline">/feature</code> là nhạc trưởng: plan → code → test → review, kèm cả hai cổng duyệt.</span></p>
+            </article>
+            <article class="card kit__card reveal">
+              <div class="kit__cardhead"><span class="icon-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-shield"/></svg></span><h3 class="h4"><span class="en">Guardrail Hooks</span><span class="vi">Hook bảo vệ</span></h3></div>
+              <ul class="hooks" role="list">
+                <li><code class="code-inline">guard-bash</code><span><span class="en">blocks <code>git push</code>, <code>rm -rf</code>, <code>sudo</code>, <code>DROP TABLE</code></span><span class="vi">chặn <code>git push</code>, <code>rm -rf</code>, <code>sudo</code>, <code>DROP TABLE</code></span></span></li>
+                <li><code class="code-inline">format</code><span><span class="en">auto-formats every edited file</span><span class="vi">tự format mọi file vừa sửa</span></span></li>
+                <li><code class="code-inline">protect-tests</code><span><span class="en">locks test files during a fix</span><span class="vi">khóa file test khi đang sửa lỗi</span></span></li>
+                <li><code class="code-inline">production-gate</code><span><span class="en">prod deploys need a named approval</span><span class="vi">deploy production cần người duyệt có tên</span></span></li>
+              </ul>
+              <p class="muted"><span class="en">They run for the main session and every subagent.</span><span class="vi">Chạy cho phiên chính và mọi subagent.</span></p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================== WORKFLOW -->
+    <section class="section section--band" id="workflow">
+      <div class="container">
+        <header class="section__head reveal">
+          <span class="tag"><span class="en">Workflow</span><span class="vi">Quy trình</span></span>
+          <h2 class="h1"><span class="en">Your First Feature in Three Commands</span><span class="vi">Tính năng đầu tiên chỉ với ba lệnh</span></h2>
+          <p class="lead">
+            <span class="en">From idea to a reviewed local commit. Agents loop on their own within bounded rounds; the decisions stay yours.</span>
+            <span class="vi">Từ ý tưởng tới một commit đã được review trên máy. Agent tự lặp trong số vòng giới hạn; quyết định vẫn thuộc về bạn.</span>
+          </p>
+        </header>
+
+        <ol class="flow" role="list">
+          <li class="flow__item reveal">
+            <span class="flow__dot" aria-hidden="true"></span>
+            <div class="card card--step flow__card">
+              <code class="flow__cmd"><span class="prompt">&gt;</span> /intent Add password reset via email</code>
+              <p class="muted"><span class="en">Claude asks what an analyst would ask, then writes</span><span class="vi">Claude hỏi như một analyst, rồi viết</span> <code class="code-inline">intent/reset-password.md</code></p>
+            </div>
+          </li>
+          <li class="flow__item reveal">
+            <span class="flow__dot" aria-hidden="true"></span>
+            <div class="card card--step flow__card">
+              <code class="flow__cmd"><span class="prompt">&gt;</span> /spec intent/reset-password.md</code>
+              <p class="muted"><span class="en">Requirements, design, acceptance criteria and flagged risks in</span><span class="vi">Yêu cầu, thiết kế, tiêu chí chấp nhận và rủi ro được đánh dấu trong</span> <code class="code-inline">specs/reset-password.md</code></p>
+            </div>
+          </li>
+          <li class="flow__item reveal">
+            <span class="flow__dot" aria-hidden="true"></span>
+            <div class="card card--step flow__card">
+              <code class="flow__cmd"><span class="prompt">&gt;</span> /feature specs/reset-password.md</code>
+              <p class="muted"><span class="en">The planner writes</span><span class="vi">Planner viết</span> <code class="code-inline">plans/reset-password.md</code></p>
+            </div>
+          </li>
+          <li class="flow__item flow__item--gate reveal">
+            <span class="flow__dot" aria-hidden="true"></span>
+            <div class="card card--glass flow__card">
+              <p class="flow__gate"><span class="tag__dot" aria-hidden="true"></span><span class="en">Gate 1 — You approve the plan</span><span class="vi">Cổng 1 — Bạn duyệt plan</span></p>
+              <p class="muted"><span class="en">Approve, request changes, or cancel. Nothing is coded before this.</span><span class="vi">Duyệt, yêu cầu sửa, hoặc hủy. Chưa có dòng code nào trước bước này.</span></p>
+            </div>
+          </li>
+          <li class="flow__item reveal">
+            <span class="flow__dot" aria-hidden="true"></span>
+            <div class="card card--step flow__card">
+              <p class="flow__agents">coder <span aria-hidden="true">→</span> tester <span class="subtle">(≤ 3)</span> <span aria-hidden="true">→</span> reviewer <span class="subtle">(≤ 2)</span></p>
+              <p class="muted"><span class="en">Runs on its own branch. Every phase appends a row to the plan's pipeline log.</span><span class="vi">Chạy trên nhánh riêng. Mỗi pha ghi thêm một dòng vào pipeline log của plan.</span></p>
+            </div>
+          </li>
+          <li class="flow__item flow__item--gate reveal">
+            <span class="flow__dot" aria-hidden="true"></span>
+            <div class="card card--glass flow__card">
+              <p class="flow__gate"><span class="tag__dot" aria-hidden="true"></span><span class="en">Gate 2 — You approve the commit</span><span class="vi">Cổng 2 — Bạn duyệt commit</span></p>
+              <p class="muted"><span class="en">A conventional commit lands on <code class="code-inline">feat/reset-password</code>, with a ready-to-paste PR description. You push.</span><span class="vi">Một conventional commit trên <code class="code-inline">feat/reset-password</code>, kèm mô tả PR sẵn để dán. Bạn tự push.</span></p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============================================================ ROADMAP -->
+    <section class="section" id="roadmap">
+      <div class="container">
+        <header class="section__head reveal">
+          <span class="tag"><span class="en">Roadmap</span><span class="vi">Lộ trình</span></span>
+          <h2 class="h2"><span class="en">Run It Anywhere, Pinned to a Version</span><span class="vi">Chạy ở đâu cũng được, ghim theo phiên bản</span></h2>
+        </header>
+        <div class="roadmap">
+          <article class="card reveal">
+            <p class="label roadmap__when"><span class="tag__dot" aria-hidden="true"></span><span class="en">Now</span><span class="vi">Hiện tại</span></p>
+            <h3 class="h4"><span class="en">Versioned on GitHub</span><span class="vi">Gắn version trên GitHub</span></h3>
+            <p class="muted"><span class="en">Tagged releases, raw-URL one-liners, reproducible for teams and CI.</span><span class="vi">Release theo tag, lệnh một dòng qua raw URL, tái lập được cho team và CI.</span></p>
+          </article>
+          <article class="card reveal">
+            <p class="label roadmap__when"><span class="en">Next</span><span class="vi">Tiếp theo</span></p>
+            <h3 class="h4"><code class="code-inline">npx create-ai-sdlc</code></h3>
+            <p class="muted"><span class="en">A tiny npm wrapper that picks the right script for your OS.</span><span class="vi">Một gói npm nhỏ tự chọn đúng script cho hệ điều hành.</span></p>
+          </article>
+          <article class="card reveal">
+            <p class="label roadmap__when"><span class="en">Later</span><span class="vi">Về sau</span></p>
+            <h3 class="h4"><span class="en">Homebrew, pipx, Community</span><span class="vi">Homebrew, pipx, cộng đồng</span></h3>
+            <p class="muted"><span class="en">More installers, and stages and skills suggested by the people using it.</span><span class="vi">Thêm kênh cài đặt, cùng các stage và skill do chính người dùng đề xuất.</span></p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ FAQ -->
+    <section class="section" id="faq">
+      <div class="container faq-wrap">
+        <header class="faq-wrap__head reveal">
+          <span class="tag">FAQ</span>
+          <h2 class="h2"><span class="en">Frequently Asked Questions</span><span class="vi">Câu hỏi thường gặp</span></h2>
+          <p class="muted"><span class="en">Something missing?</span><span class="vi">Chưa thấy câu trả lời?</span> <a data-gh="issues" href="https://github.com/"><span class="en">Ask on GitHub</span><span class="vi">Hỏi trên GitHub</span></a></p>
+        </header>
+        <div class="faq reveal">
+          <details>
+            <summary><span class="en">Is this an official Anthropic product?</span><span class="vi">Đây có phải sản phẩm chính thức của Anthropic?</span></summary>
+            <div><span class="en">No. It is an independent, MIT-licensed starter that follows the structure of Anthropic's published AI-Native SDLC Playbook.</span><span class="vi">Không. Đây là starter độc lập, giấy phép MIT, đi theo cấu trúc của AI-Native SDLC Playbook mà Anthropic đã công bố.</span></div>
+          </details>
+          <details>
+            <summary><span class="en">Does it install Node, Python or Go?</span><span class="vi">Nó có cài Node, Python hay Go không?</span></summary>
+            <div><span class="en">No. It only pins versions: <code class="code-inline">.nvmrc</code>, <code class="code-inline">.python-version</code>, <code class="code-inline">.tool-versions</code> and the matching manifest. Install runtimes with mise, nvm or asdf. This keeps the one-liner dependency-free.</span><span class="vi">Không. Nó chỉ ghim phiên bản: <code class="code-inline">.nvmrc</code>, <code class="code-inline">.python-version</code>, <code class="code-inline">.tool-versions</code> và manifest tương ứng. Cài runtime bằng mise, nvm hoặc asdf. Nhờ vậy lệnh một dòng không phụ thuộc gì.</span></div>
+          </details>
+          <details>
+            <summary><span class="en">Is it safe to run twice?</span><span class="vi">Chạy lại lần hai có an toàn không?</span></summary>
+            <div><span class="en">Yes. Existing files are skipped unless you pass <code class="code-inline">--force</code> (<code class="code-inline">-Force</code> on Windows).</span><span class="vi">Có. File đã tồn tại sẽ được bỏ qua, trừ khi bạn dùng <code class="code-inline">--force</code> (<code class="code-inline">-Force</code> trên Windows).</span></div>
+          </details>
+          <details>
+            <summary><span class="en">Can the agents push or deploy on their own?</span><span class="vi">Agent có tự push hay deploy được không?</span></summary>
+            <div><span class="en">No. <code class="code-inline">git push</code> is denied in <code class="code-inline">settings.json</code> and blocked again by the <code class="code-inline">guard-bash</code> hook. The pipeline commits locally only after Gate 2, and production deploys need a named approval.</span><span class="vi">Không. <code class="code-inline">git push</code> bị cấm trong <code class="code-inline">settings.json</code> và bị hook <code class="code-inline">guard-bash</code> chặn thêm lần nữa. Pipeline chỉ commit trên máy sau Cổng 2, và deploy production cần người duyệt có tên.</span></div>
+          </details>
+          <details>
+            <summary><span class="en">Why is the version tag in the URL?</span><span class="vi">Vì sao tag phiên bản nằm trong URL?</span></summary>
+            <div><span class="en">A tag never changes, so <code class="code-inline">v0.1.0</code> gives every teammate and every CI run the exact same scaffold. Upgrade by changing the tag.</span><span class="vi">Tag không bao giờ đổi, nên <code class="code-inline">v0.1.0</code> cho mọi thành viên và mọi lần chạy CI cùng một bộ khung. Muốn nâng cấp, chỉ cần đổi tag.</span></div>
+          </details>
+          <details>
+            <summary><span class="en">Does it work on Windows?</span><span class="vi">Có chạy trên Windows không?</span></summary>
+            <div><span class="en">Yes — PowerShell 5+ or pwsh 7+. The PowerShell script writes the same files as the bash one, byte for byte (UTF-8, LF).</span><span class="vi">Có — PowerShell 5+ hoặc pwsh 7+. Script PowerShell tạo đúng các file như bản bash, giống từng byte (UTF-8, LF).</span></div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= COMMUNITY -->
+    <section class="section cta" id="community">
+      <div class="orb orb--violet cta__orb" aria-hidden="true"></div>
+      <div class="container">
+        <div class="panel cta__panel reveal">
+          <span class="tag"><span class="en">Community</span><span class="vi">Cộng đồng</span></span>
+          <h2 class="h2"><span class="en">Help Shape the Loop</span><span class="vi">Cùng hoàn thiện vòng lặp</span></h2>
+          <p class="lead"><span class="en">Report a bug, suggest a stage or a skill, or share how your team runs it.</span><span class="vi">Báo lỗi, đề xuất stage hay skill mới, hoặc chia sẻ cách team bạn vận hành.</span></p>
+          <div class="btn-group">
+            <a class="btn btn--primary" data-gh="new-issue" href="https://github.com/"><span class="en">Open an Issue</span><span class="vi">Tạo issue</span></a>
+            <a class="btn btn--secondary" href="https://claude.com/blog/the-ai-native-sdlc-playbook" rel="noopener" target="_blank"><span class="en">Read the Playbook</span><span class="vi">Đọc playbook</span></a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================================================= FOOTER -->
+  <footer class="footer">
+    <hr class="hairline">
+    <div class="container container--wide footer__inner">
+      <a class="brand" href="#top" aria-label="AI-SDLC Starter, back to top">
+        <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true"><use href="#i-mark"/></svg>
+        <span>AI-SDLC Starter</span>
+      </a>
+      <p class="subtle footer__note">
+        v<span data-version>0.1.0</span> · MIT ·
+        <span class="en">Independent project, not affiliated with Anthropic.</span><span class="vi">Dự án độc lập, không liên kết với Anthropic.</span>
+      </p>
+      <nav class="footer__links" aria-label="Footer">
+        <a data-gh="repo" href="https://github.com/">GitHub</a>
+        <a data-gh="releases" href="https://github.com/"><span class="en">Releases</span><span class="vi">Phiên bản</span></a>
+        <a href="https://claude.com/blog/the-ai-native-sdlc-playbook" rel="noopener" target="_blank">Playbook</a>
+      </nav>
+    </div>
+  </footer>
+
+  <!-- ============================================================== ICONS -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-mark" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4a12 12 0 1 1-10.4 6"/><path d="M5.6 4.5v5.5h5.5"/><circle cx="16" cy="16" r="3.5"/></g></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02a9.6 9.6 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></g></symbol>
+    <symbol id="i-agents" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3"/><circle cx="16.5" cy="9.5" r="2.5"/><path d="M2.5 19a5.5 5.5 0 0 1 11 0M13.5 15.2A4.5 4.5 0 0 1 21 19"/></g></symbol>
+    <symbol id="i-skills" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"/><path d="m16 15 3 3-3 3"/></g></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5.5c0 4.3 3 7.8 7 9.5 4-1.7 7-5.2 7-9.5V6l-7-3z"/><path d="m9 12 2 2 4-4"/></g></symbol>
+  </svg>
+</body>
+</html>
