@@ -73,8 +73,8 @@
           <span class="vi">Khởi động mọi dự án <span class="text-lavender">theo chuẩn AI-Native</span></span>
         </h1>
         <p class="lead hero__lead reveal">
-          <span class="en">One command scaffolds the six-stage loop — intent, spec, plan, tests, review, monitoring — plus the Claude Code agents, skills and guardrail hooks that run it. Same output on macOS, Linux and Windows.</span>
-          <span class="vi">Một lệnh dựng sẵn vòng lặp sáu giai đoạn — intent, spec, plan, test, review, monitoring — kèm bộ agent, skill và hook bảo vệ của Claude Code để vận hành. Kết quả giống hệt nhau trên macOS, Linux và Windows.</span>
+          <span class="en">One command — <code class="code-inline">npx</code>, curl or PowerShell — scaffolds the six-stage loop: intent, spec, plan, tests, review, monitoring, plus the Claude Code agents, skills and guardrail hooks that run it. Same output on macOS, Linux and Windows.</span>
+          <span class="vi">Một lệnh — <code class="code-inline">npx</code>, curl hoặc PowerShell — dựng sẵn vòng lặp sáu giai đoạn: intent, spec, plan, test, review, monitoring, kèm bộ agent, skill và hook bảo vệ của Claude Code. Kết quả giống hệt nhau trên macOS, Linux và Windows.</span>
         </p>
         <div class="btn-group reveal">
           <a class="btn btn--primary" href="#install"><span class="en">Get Started</span><span class="vi">Bắt đầu ngay</span></a>
@@ -483,19 +483,19 @@
         </header>
         <div class="roadmap">
           <article class="card reveal">
-            <p class="label roadmap__when"><span class="tag__dot" aria-hidden="true"></span><span class="en">Now</span><span class="vi">Hiện tại</span></p>
-            <h3 class="h4"><span class="en">Versioned on GitHub</span><span class="vi">Gắn version trên GitHub</span></h3>
-            <p class="muted"><span class="en">Tagged releases, raw-URL one-liners, reproducible for teams and CI.</span><span class="vi">Release theo tag, lệnh một dòng qua raw URL, tái lập được cho team và CI.</span></p>
+            <p class="label roadmap__when"><span class="tag__dot" aria-hidden="true"></span><span class="en">Shipped</span><span class="vi">Đã có</span></p>
+            <h3 class="h4"><code class="code-inline">npx ai-sdlc-starter</code></h3>
+            <p class="muted"><span class="en">On <a href="https://www.npmjs.com/package/ai-sdlc-starter" rel="noopener" target="_blank">npm</a>, plus the curl and PowerShell one-liners. Every release is tagged, so a pinned command always produces the same scaffold.</span><span class="vi">Đã lên <a href="https://www.npmjs.com/package/ai-sdlc-starter" rel="noopener" target="_blank">npm</a>, cùng lệnh curl và PowerShell. Mỗi bản phát hành đều có tag, nên lệnh đã ghim luôn cho ra cùng một bộ khung.</span></p>
           </article>
           <article class="card reveal">
             <p class="label roadmap__when"><span class="en">Next</span><span class="vi">Tiếp theo</span></p>
-            <h3 class="h4"><code class="code-inline">npx create-ai-sdlc</code></h3>
-            <p class="muted"><span class="en">A tiny npm wrapper that picks the right script for your OS.</span><span class="vi">Một gói npm nhỏ tự chọn đúng script cho hệ điều hành.</span></p>
+            <h3 class="h4"><span class="en">Guardrails that survive a skipped hook</span><span class="vi">Hàng rào không thể lách</span></h3>
+            <p class="muted"><span class="en">Secret scanning in both the pre-commit hook and CI, a dependency policy, a Stop hook that blocks a turn while <code class="code-inline">make test</code> is red, and a dev container.</span><span class="vi">Quét secret ở cả pre-commit lẫn CI, chính sách cập nhật dependency, Stop hook chặn kết thúc lượt khi <code class="code-inline">make test</code> còn đỏ, và dev container.</span></p>
           </article>
           <article class="card reveal">
             <p class="label roadmap__when"><span class="en">Later</span><span class="vi">Về sau</span></p>
             <h3 class="h4"><span class="en">Homebrew, pipx, Community</span><span class="vi">Homebrew, pipx, cộng đồng</span></h3>
-            <p class="muted"><span class="en">More installers, and stages and skills suggested by the people using it.</span><span class="vi">Thêm kênh cài đặt, cùng các stage và skill do chính người dùng đề xuất.</span></p>
+            <p class="muted"><span class="en">More installers, more runtimes, and stages and skills suggested by the people using it.</span><span class="vi">Thêm kênh cài đặt, thêm runtime, cùng các stage và skill do chính người dùng đề xuất.</span></p>
           </article>
         </div>
       </div>
@@ -529,6 +529,10 @@
           <details>
             <summary><span class="en">Why is the version tag in the URL?</span><span class="vi">Vì sao tag phiên bản nằm trong URL?</span></summary>
             <div><span class="en">A tag never changes, so <code class="code-inline">v0.1.0</code> gives every teammate and every CI run the exact same scaffold. Upgrade by changing the tag.</span><span class="vi">Tag không bao giờ đổi, nên <code class="code-inline">v0.1.0</code> cho mọi thành viên và mọi lần chạy CI cùng một bộ khung. Muốn nâng cấp, chỉ cần đổi tag.</span></div>
+          </details>
+          <details>
+            <summary><span class="en">Do I need Node to use it?</span><span class="vi">Có bắt buộc cài Node không?</span></summary>
+            <div><span class="en">Only for the <code class="code-inline">npx</code> form. The curl and PowerShell one-liners run the scripts directly, and the scripts themselves need nothing but bash or PowerShell and git.</span><span class="vi">Chỉ cần Node nếu bạn dùng <code class="code-inline">npx</code>. Lệnh curl và PowerShell chạy thẳng script, mà bản thân script chỉ cần bash hoặc PowerShell và git.</span></div>
           </details>
           <details>
             <summary><span class="en">Does it work on Windows?</span><span class="vi">Có chạy trên Windows không?</span></summary>
@@ -570,6 +574,7 @@
       <nav class="footer__links" aria-label="Footer">
         <a data-gh="repo" href="https://github.com/">GitHub</a>
         <a data-gh="releases" href="https://github.com/"><span class="en">Releases</span><span class="vi">Phiên bản</span></a>
+        <a href="https://www.npmjs.com/package/ai-sdlc-starter" rel="noopener" target="_blank">npm</a>
         <a href="https://claude.com/blog/the-ai-native-sdlc-playbook" rel="noopener" target="_blank">Playbook</a>
       </nav>
     </div>
