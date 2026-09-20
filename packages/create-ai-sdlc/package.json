@@ -1,0 +1,38 @@
+{
+  "name": "create-ai-sdlc",
+  "version": "0.2.0",
+  "description": "Scaffold an AI-Native SDLC project in one command.",
+  "bin": {
+    "create-ai-sdlc": "index.js"
+  },
+  "files": [
+    "index.js",
+    "init.sh",
+    "init.ps1",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "author": "Niseel",
+  "homepage": "https://niseel.github.io/ai-sdlc-starter/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Niseel/ai-sdlc-starter.git",
+    "directory": "packages/create-ai-sdlc"
+  },
+  "bugs": {
+    "url": "https://github.com/Niseel/ai-sdlc-starter/issues"
+  },
+  "keywords": [
+    "scaffold",
+    "generator",
+    "sdlc",
+    "claude-code",
+    "ai-agents",
+    "agents-md",
+    "starter"
+  ]
+}
