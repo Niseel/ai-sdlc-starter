@@ -38,8 +38,17 @@ powershell -ExecutionPolicy Bypass -File .\init.ps1 my-app -With node
 ```
 
 `-w node` · `python` · `go` · `java`, pinned with `@` (`-w python@3.11`), comma separated.
-Pin the scaffolder with `npx ai-sdlc-starter@0.2.0`, or by swapping the URL for a tag:
-`raw.githubusercontent.com/Niseel/ai-sdlc-starter/v0.2.0/init.sh`.
+Pin the scaffolder with `npx ai-sdlc-starter@0.3.0`, or by swapping the URL for a tag:
+`raw.githubusercontent.com/Niseel/ai-sdlc-starter/v0.3.0/init.sh`.
+
+**Already have a project?** Run it in the project root with `--adopt`. Nothing of
+yours is overwritten: `CLAUDE.md`, `AGENTS.md` and `.gitignore` gain one marked block,
+`.claude/settings.json` is merged, your test and lint commands are detected.
+
+```bash
+npx ai-sdlc-starter@latest --adopt --dry-run   # preview every change
+npx ai-sdlc-starter@latest --adopt
+```
 
 > Versions get pinned; runtimes never get downloaded — that is [mise](https://mise.jdx.dev)'s job.
 > Re-running skips what exists unless you pass `--force`. `-h` lists every option.
