@@ -70,7 +70,7 @@ git -c user.name=test -c user.email=test@example.com commit -qm "existing projec
 
 # ---- 1. a fresh scaffold refuses to run here ----------------------------------
 if run demo -w node > "$logs/guard.log" 2>&1; then fail "fresh scaffold ran on an existing project"; fi
-grep -q -- "--adopt" "$logs/guard.log" || fail "guard did not suggest --adopt"
+grep -qi -- "-adopt" "$logs/guard.log" || fail "guard did not suggest --adopt / -Adopt"
 pass "fresh scaffold refuses an existing project and suggests --adopt"
 
 # ---- 2. dry run writes nothing -------------------------------------------------
