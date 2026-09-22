@@ -8,7 +8,7 @@ name: scaffold
 on:
   push:
     branches: ["**"]
-    paths: ["init.sh", "init.ps1", ".github/workflows/scaffold-test.yml"]
+    paths: ["init.sh", "init.ps1", "scripts/**", "packages/**", ".github/workflows/scaffold-test.yml"]
   pull_request:
   workflow_dispatch:
 
