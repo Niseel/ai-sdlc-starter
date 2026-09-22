@@ -85,6 +85,7 @@
       go: get("go") ? get("go").value : "",
       java: get("java") ? get("java").value : "",
       nogit: get("nogit") ? get("nogit").checked : false,
+      adopt: get("adopt") ? get("adopt").checked : false,
       force: get("force") ? get("force").checked : false
     };
   }
@@ -96,14 +97,14 @@
   function buildCommand(o, target) {
     var win = target === "win";
     var npx = target === "npx";
-    var args = [o.name];
+    var args = o.adopt ? [win ? "-Adopt" : "--adopt"] : [o.name];
     var withList = [];
     ["node", "python", "go", "java"].forEach(function (r) {
-      if (!o[r]) return;
+      if (!o[r] || o.adopt) return;
       withList.push(o[r] === RUNTIME_DEFAULTS[r] ? r : r + "@" + o[r]);
     });
     if (withList.length) args.push((win ? "-With " : "-w ") + withList.join(","));
-    if (o.nogit) args.push(win ? "-NoGit" : "--no-git");
+    if (o.nogit && !o.adopt) args.push(win ? "-NoGit" : "--no-git");
     if (o.force) args.push(win ? "-Force" : "-f");
     var tail = args.join(" ");
     if (npx) {
@@ -130,7 +131,13 @@
     $$("[data-src-note]").forEach(function (el) {
       el.hidden = el.getAttribute("data-src-note") !== src;
     });
-    var picked = ["node", "python", "go", "java"].filter(function (r) { return readOptions()[r]; }).length;
+    var opts = readOptions();
+    if (form) {
+      ["name", "node", "python", "go", "java", "nogit"].forEach(function (n) {
+        if (form.elements[n]) form.elements[n].disabled = opts.adopt;
+      });
+    }
+    var picked = opts.adopt ? 0 : ["node", "python", "go", "java"].filter(function (r) { return opts[r]; }).length;
     $$("[data-multi-note]").forEach(function (el) { el.hidden = picked < 2; });
   }
 

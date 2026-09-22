@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# init.sh   (init-ai-sdlc v0.2.0)
+# init.sh   (init-ai-sdlc v0.3.0)
 # EN: Scaffolds an AI-Native SDLC project (Anthropic 6-stage playbook:
 #     Plan -> Design -> Build -> Test -> Deploy -> Maintain).
 # VI: Tao khung du an theo AI-Native SDLC cua Anthropic (6 giai doan:
@@ -15,7 +15,7 @@
 # =============================================================================
 set -euo pipefail
 
-VERSION="0.2.0"
+VERSION="0.3.0"
 NAME=""
 DIR="."
 NODE_VER=""
@@ -24,6 +24,8 @@ GO_VER=""
 JAVA_VER=""
 FORCE=0
 DO_GIT=1
+ADOPT=0
+DRY_RUN=0
 
 # ---- Bilingual print helpers / Ham in song ngu ------------------------------
 if [ -t 1 ]; then
@@ -57,11 +59,14 @@ Usage / Cach dung:
   --java VER       EN: pin Java version (e.g. 21)              VI: ghim ban Java
   -f, --force      EN: overwrite existing files                VI: ghi de file da co
   --no-git         EN: do not run 'git init'                   VI: khong chay git init
+  --adopt          EN: add the SDLC kit to an existing project VI: them bo SDLC vao project co san
+  --dry-run        EN: show what would change, write nothing   VI: chi xem truoc, khong ghi gi
   -h, --help       EN: show this help                          VI: hien tro giup
 
 Examples / Vi du:
   init.sh my-app -w node,python@3.12
   init.sh -n svc -w go@1.22 -d ./svc
+  init.sh --adopt --dry-run          (existing project: preview first)
 
 NOTE / LUU Y:
   EN: This script only PINS versions (writes .nvmrc/.python-version/.tool-versions
@@ -104,6 +109,8 @@ while [ $# -gt 0 ]; do
     --java)      JAVA_VER="${2:-}"; shift 2 ;;
     -f|--force)  FORCE=1; shift ;;
     --no-git)    DO_GIT=0; shift ;;
+    --adopt)     ADOPT=1; shift ;;
+    --dry-run)   DRY_RUN=1; shift ;;
     --version)   echo "init-ai-sdlc $VERSION"; exit 0 ;;
     -h|--help)   usage; exit 0 ;;
     -*) warn "Unknown option / Tuy chon la: $1"; usage; exit 1 ;;
@@ -112,9 +119,45 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+if [ "$DRY_RUN" -eq 1 ] && [ ! -d "$DIR" ]; then
+  warn "--dry-run needs an existing directory / can thu muc co san: $DIR"; exit 1
+fi
 mkdir -p "$DIR"
 cd "$DIR"
 [ -z "$NAME" ] && NAME="$(basename "$(pwd)")"
+
+# ---- Existing-project guard / Chan chay nham tren project co san -------------
+# EN: A fresh scaffold writes README, Makefile, CI and a runtime stack. On a
+#     project that already exists that is noise at best, so refuse unless the
+#     user asked for --adopt (or --force). A folder this script made is fine.
+# VI: Scaffold moi ghi README, Makefile, CI va stack. Tren project co san thi
+#     do la rac, nen tu choi tru khi co --adopt (hoac --force).
+looks_existing() {
+  local f
+  for f in package.json pyproject.toml requirements.txt go.mod pom.xml build.gradle \
+           build.gradle.kts Cargo.toml composer.json Gemfile; do
+    [ -e "$f" ] && return 0
+  done
+  [ -d .git ] && git rev-parse --verify HEAD >/dev/null 2>&1 && return 0
+  return 1
+}
+if [ "$ADOPT" -eq 0 ] && [ "$FORCE" -eq 0 ] && [ ! -e intent/_TEMPLATE.md ] && looks_existing; then
+  warn "This folder already holds a project. / Thu muc nay da co project."
+  warn "Re-run with --adopt to add the SDLC kit without touching your code,"
+  warn "or with --force to scaffold a fresh project here anyway."
+  warn "Chay lai voi --adopt de them bo SDLC ma khong dung toi code cua ban."
+  exit 1
+fi
+if [ "$ADOPT" -eq 1 ]; then
+  if [ -n "$NODE_VER$PY_VER$GO_VER$JAVA_VER" ]; then
+    warn "--adopt ignores -w: your project already has its stack. / --adopt bo qua -w."
+  fi
+  NODE_VER=""; PY_VER=""; GO_VER=""; JAVA_VER=""
+  if [ -d .git ] && [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+    warn "Uncommitted changes here. Commit or stash first, so the starter's diff is easy to review."
+    warn "Co thay doi chua commit. Nen commit/stash truoc de review rieng phan starter them vao."
+  fi
+fi
 
 info "init-ai-sdlc $VERSION"
 info "Project / Du an: $NAME"
@@ -123,36 +166,94 @@ info "Target  / Thu muc: $(pwd)"
 [ -n "$PY_VER" ]   && info "Python: $PY_VER"
 [ -n "$GO_VER" ]   && info "Go:     $GO_VER"
 [ -n "$JAVA_VER" ] && info "Java:   $JAVA_VER"
+[ "$ADOPT" -eq 1 ]   && info "Mode / Che do: adopt (existing project / project co san)"
+[ "$DRY_RUN" -eq 1 ] && info "Dry run: nothing will be written / khong ghi file nao"
 
 # ---- File writer: skips existing unless --force / Ham ghi file ---------------
 # Usage: wf path/to/file <<'EOF' ... EOF
+nl='
+'
+created=""; kept=""; updated=""; same=""
+# EN: "kept" means the file differs from what the starter would write, so it is
+#     yours. "same" means it already matches (e.g. written by an earlier run).
+# VI: "kept" = file khac ban cua starter, tuc la cua ban. "same" = da giong het.
 wf() {
-  local path="$1"
-  mkdir -p "$(dirname "$path")"
+  local path="$1" tmp
   if [ -e "$path" ] && [ "$FORCE" -ne 1 ]; then
-    skip "$path"
-    cat >/dev/null   # consume heredoc
+    tmp="$(mktemp)"; cat > "$tmp"
+    if cmp -s "$tmp" "$path"; then same="${same}${path}${nl}"; skip "$path (unchanged)"
+    else kept="${kept}${path}${nl}"; skip "$path (yours, kept / cua ban, giu nguyen)"; fi
+    rm -f "$tmp"
     return 0
   fi
+  created="${created}${path}${nl}"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    info "would write / se ghi: $path"
+    cat >/dev/null
+    return 0
+  fi
+  mkdir -p "$(dirname "$path")"
   cat >"$path"
   ok "$path"
 }
-mkd() { mkdir -p "$1"; [ -e "$1/.gitkeep" ] || : >"$1/.gitkeep"; }
+mkd() { [ "$DRY_RUN" -eq 1 ] && return 0; mkdir -p "$1"; [ -e "$1/.gitkeep" ] || : >"$1/.gitkeep"; }
+
+# ---- Marked block: add or refresh without touching the rest of the file ------
+# EN: upsert_block FILE START END, body on stdin. Missing file -> just the block.
+#     Block present -> replaced in place. Otherwise -> appended after a blank line.
+# VI: Chen hoac cap nhat khoi co danh dau, khong dung phan con lai cua file.
+upsert_block() {
+  local file="$1" start="$2" end="$3" body tmp
+  body="$(cat)"
+  tmp="$(mktemp)"
+  printf '%s\n%s\n%s\n' "$start" "$body" "$end" > "$tmp"
+  if [ ! -e "$file" ]; then
+    created="${created}${file}${nl}"
+    if [ "$DRY_RUN" -eq 1 ]; then info "would write / se ghi: $file"
+    else mkdir -p "$(dirname "$file")"; cp "$tmp" "$file"; ok "$file"; fi
+  elif grep -qF -- "$start" "$file"; then
+    awk -v s="$start" -v e="$end" -v bf="$tmp" '
+      { line = $0; sub(/\r$/, "", line) }
+      line == s { while ((getline l < bf) > 0) print l; close(bf); skip = 1; next }
+      skip && line == e { skip = 0; next }
+      !skip { print }' "$file" > "$tmp.new"
+    if cmp -s "$tmp.new" "$file"; then
+      same="${same}${file}${nl}"; skip "$file (block unchanged / khoi khong doi)"
+    else
+      updated="${updated}${file}${nl}"
+      if [ "$DRY_RUN" -eq 1 ]; then info "would refresh block / se cap nhat khoi: $file"
+      else cp "$tmp.new" "$file"; ok "$file (block refreshed / da cap nhat khoi)"; fi
+    fi
+    rm -f "$tmp.new"
+  else
+    updated="${updated}${file}${nl}"
+    if [ "$DRY_RUN" -eq 1 ]; then info "would append block / se chen khoi: $file"
+    else
+      if [ -n "$(tail -c1 "$file")" ]; then printf '\n' >> "$file"; fi
+      { printf '\n'; cat "$tmp"; } >> "$file"
+      ok "$file (block appended / da chen khoi)"
+    fi
+  fi
+  rm -f "$tmp"
+}
 TMP_MAKEFILE="$(mktemp)"
 
 # =============================================================================
 # 1) Directories / Thu muc
 # =============================================================================
-for d in intent specs plans docs/adr docs/runbooks docs/incidents \
-         evals monitoring src tests scripts \
-         .claude/agents .claude/skills .claude/hooks .github/workflows; do
-  mkdir -p "$d"
-done
-mkd src; mkd tests; mkd scripts
+if [ "$DRY_RUN" -eq 0 ]; then
+  for d in intent specs plans docs/adr docs/runbooks docs/incidents evals monitoring \
+           .claude/agents .claude/skills .claude/hooks; do
+    mkdir -p "$d"
+  done
+fi
+# EN: An existing project already has its own layout. / VI: Project co san da co bo cuc rieng.
+if [ "$ADOPT" -eq 0 ]; then mkd src; mkd tests; mkd scripts; fi
 
 # =============================================================================
 # 2) Root files / File goc
 # =============================================================================
+if [ "$ADOPT" -eq 0 ]; then
 wf README.md <<EOF
 # $NAME
 
@@ -185,7 +286,9 @@ Moi giai doan commit mot artifact vao git de giai doan sau doc:
 
 See \`docs/AI-SDLC.md\` for the full guide. Xem huong dan day du o \`docs/AI-SDLC.md\`.
 EOF
+fi
 
+if [ "$ADOPT" -eq 0 ]; then
 wf .gitignore <<'EOF'
 # Dependencies
 node_modules/
@@ -215,7 +318,16 @@ Thumbs.db
 .idea/
 .vscode/
 EOF
+else
+upsert_block .gitignore "# ai-sdlc:start" "# ai-sdlc:end" <<'EOF'
+# EN: local Claude Code files, never committed / VI: file cuc bo, khong commit
+.claude/settings.local.json
+.claude/settings.json.bak
+.claude/agent-memory-local/
+EOF
+fi
 
+if [ "$ADOPT" -eq 0 ]; then
 wf .env.example <<'EOF'
 # EN: Copy to .env and fill in. Never commit the real .env.
 # VI: Copy thanh .env va dien. Khong bao gio commit .env that.
@@ -237,6 +349,7 @@ indent_size = 4
 [*.md]
 trim_trailing_whitespace = false
 EOF
+fi
 
 # ---- REVIEW.md (Deploy stage policy) ----------------------------------------
 wf REVIEW.md <<'EOF'
@@ -261,6 +374,7 @@ Generated files and anything CI already enforces.
 EOF
 
 # ---- CLAUDE.md (Build stage: agent day-one context) -------------------------
+if [ "$ADOPT" -eq 0 ]; then
 wf CLAUDE.md <<EOF
 # $NAME
 
@@ -295,6 +409,7 @@ Cac lenh goc nam trong AGENTS.md.
 <!-- VI: Moi khi Claude sai 2 lan, them 1 dong o day. -->
 - <e.g. do not bump dependency versions; the platform team owns them>
 EOF
+fi
 
 # =============================================================================
 # 3) Stage artifacts: templates + examples
@@ -853,7 +968,7 @@ EOF
 chmod +x .claude/hooks/production-gate.sh 2>/dev/null || true
 
 # ---- settings.json ----
-wf .claude/settings.json <<'EOF'
+settings_json="$(cat <<'EOF'
 {
   "permissions": {
     "allow": [
@@ -893,10 +1008,60 @@ wf .claude/settings.json <<'EOF'
   }
 }
 EOF
+)"
+
+# EN: Merge the starter's permissions and hooks into an existing settings.json.
+#     Nothing of yours is removed; the original is kept as settings.json.bak.
+# VI: Gop permissions va hooks vao settings.json co san. Khong xoa gi cua ban;
+#     ban goc duoc giu o settings.json.bak.
+merge_settings() {
+  local target=.claude/settings.json side=.claude/settings.ai-sdlc.json starter
+  if ! command -v jq >/dev/null 2>&1 || ! jq empty "$target" >/dev/null 2>&1; then
+    created="${created}${side}${nl}"
+    if [ "$DRY_RUN" -eq 1 ]; then info "would write / se ghi: $side"; return 0; fi
+    printf '%s\n' "$settings_json" > "$side"
+    warn "Could not merge $target automatically (needs jq and valid JSON)."
+    warn "Wrote $side - merge it into $target to switch the guardrail hooks on."
+    warn "Chua gop duoc tu dong. Hay gop $side vao $target de bat hook bao ve."
+    return 0
+  fi
+  starter="$(mktemp)"
+  printf '%s\n' "$settings_json" > "$starter"
+  [ "$DRY_RUN" -eq 1 ] || [ -e "$target.bak" ] || cp "$target" "$target.bak"
+  jq --slurpfile s "$starter" '
+    def union(a; b): a + (b - a);
+    $s[0] as $st
+    | .permissions.allow = union((.permissions.allow // []); ($st.permissions.allow // []))
+    | .permissions.deny  = union((.permissions.deny  // []); ($st.permissions.deny  // []))
+    | .hooks = (reduce ($st.hooks | to_entries[]) as $ev ((.hooks // {});
+        .[$ev.key] = (reduce $ev.value[] as $g ((.[$ev.key] // []);
+          if any(.[]; .matcher == $g.matcher)
+          then map(if .matcher == $g.matcher then .hooks = union(.hooks; $g.hooks) else . end)
+          else . + [$g] end))))
+  ' "$target" > "$starter.merged"
+  if cmp -s "$starter.merged" "$target"; then
+    same="${same}${target}${nl}"; skip "$target (already merged / da gop tu truoc)"
+  elif [ "$DRY_RUN" -eq 1 ]; then
+    updated="${updated}${target}${nl}"
+    info "would merge permissions and hooks into / se gop vao: $target"
+  else
+    cp "$starter.merged" "$target"
+    updated="${updated}${target}${nl}"
+    ok "$target (merged, original in $target.bak / da gop, ban goc o .bak)"
+  fi
+  rm -f "$starter" "$starter.merged"
+}
+
+if [ "$ADOPT" -eq 1 ] && [ -e .claude/settings.json ] && [ "$FORCE" -ne 1 ]; then
+  merge_settings
+else
+  printf '%s\n' "$settings_json" | wf .claude/settings.json
+fi
 
 # =============================================================================
 # 7) CI workflows / Luong CI
 # =============================================================================
+if [ "$ADOPT" -eq 0 ]; then
 wf .github/workflows/agent-evals.yml <<'EOF'
 name: Agent evals
 # EN: Regression-test the config that steers the agent (CLAUDE.md, .claude/**).
@@ -947,6 +1112,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: "Review this PR following REVIEW.md. Post findings tagged by severity."
 EOF
+fi
 
 # =============================================================================
 # 8) Runtime stacks / Bo khung theo ngon ngu
@@ -964,8 +1130,7 @@ add_tv(){ tool_versions="${tool_versions}$1\n"; }
 
 # ---- Node + Vitest ----------------------------------------------------------
 if [ -n "$NODE_VER" ]; then
-  if [ "$NODE_VER" = "latest" ]; then echo "node" > .nvmrc; else echo "$NODE_VER" > .nvmrc; fi
-  ok ".nvmrc"
+  if [ "$NODE_VER" = "latest" ]; then printf 'node\n' | wf .nvmrc; else printf '%s\n' "$NODE_VER" | wf .nvmrc; fi
   node_engine="$NODE_VER"; [ "$NODE_VER" = "latest" ] && node_engine=">=20"
   wf package.json <<PKG
 {
@@ -1032,7 +1197,7 @@ fi
 
 # ---- Python + uv + pytest ---------------------------------------------------
 if [ -n "$PY_VER" ]; then
-  echo "$PY_VER" > .python-version; ok ".python-version"
+  printf '%s\n' "$PY_VER" | wf .python-version
   req="$PY_VER"; case "$PY_VER" in latest) req=">=3.11";; *) req=">=$PY_VER";; esac
   wf pyproject.toml <<PY
 [project]
@@ -1221,12 +1386,10 @@ TSTJAVA
 fi
 
 if [ -n "$tool_versions" ]; then
-  if [ ! -e .tool-versions ] || [ "$FORCE" -eq 1 ]; then
-    printf "%b" "$tool_versions" > .tool-versions
-    ok ".tool-versions (mise/asdf)"
-  else skip ".tool-versions"; fi
+  printf "%b" "$tool_versions" | wf .tool-versions
 fi
 
+if [ "$ADOPT" -eq 0 ]; then
 # =============================================================================
 # 8b) One entry point: Makefile + AGENTS.md + CI
 # EN: Humans, hooks, CI and agents all run the same targets.
@@ -1312,10 +1475,102 @@ jobs:
 $ci_setup      - run: make check
 CI
 
+fi
+
+# =============================================================================
+# 8c) Adopt: bring the SDLC contract into an existing project
+# EN: Your CLAUDE.md and AGENTS.md stay as they are. A marked block is added at
+#     the end; re-running refreshes that block and nothing else.
+# VI: CLAUDE.md va AGENTS.md cua ban giu nguyen. Them mot khoi co danh dau o
+#     cuoi; chay lai chi cap nhat dung khoi do.
+# =============================================================================
+detect_commands() {
+  local out="" pm="npm" run="python -m " scripts t k
+  if [ -f Makefile ]; then
+    for t in check test lint build fmt; do
+      if grep -qE "^${t}:" Makefile; then out="${out}- make ${t}${nl}"; fi
+    done
+  fi
+  if [ -f package.json ]; then
+    [ -f pnpm-lock.yaml ] && pm="pnpm"
+    [ -f yarn.lock ] && pm="yarn"
+    if [ -f bun.lockb ] || [ -f bun.lock ]; then pm="bun"; fi
+    scripts="$(awk '/"scripts"[[:space:]]*:/ { f = 1 } f { print } f && /}/ { exit }' package.json)"
+    for k in test lint typecheck build format; do
+      if grep -qE "\"${k}\"[[:space:]]*:" <<<"$scripts"; then out="${out}- ${pm} run ${k}${nl}"; fi
+    done
+  fi
+  if [ -f pyproject.toml ]; then
+    [ -f uv.lock ] && run="uv run "
+    if grep -q "pytest" pyproject.toml; then out="${out}- ${run}pytest -q${nl}"; fi
+    if grep -q "ruff" pyproject.toml; then out="${out}- ${run}ruff check .${nl}"; fi
+  fi
+  if [ -f go.mod ]; then out="${out}- go test ./...${nl}- go vet ./...${nl}"; fi
+  if [ -f pom.xml ]; then out="${out}- mvn -q -B test${nl}"; fi
+  if [ -f build.gradle ] || [ -f build.gradle.kts ]; then
+    if [ -f gradlew ]; then out="${out}- ./gradlew test${nl}"; else out="${out}- gradle test${nl}"; fi
+  fi
+  if [ -f Cargo.toml ]; then out="${out}- cargo test${nl}- cargo clippy${nl}"; fi
+  printf '%s' "$out"
+}
+
+if [ "$ADOPT" -eq 1 ]; then
+  cmds="$(detect_commands)"
+  if [ -z "$cmds" ]; then
+    cmds="- (none detected) Add the commands that build, test and lint this project.
+- (chua do duoc) Them cac lenh build, test, lint cua project."
+    warn "No test or lint command detected. Add them to the ai-sdlc block in CLAUDE.md."
+  fi
+
+  upsert_block CLAUDE.md "<!-- ai-sdlc:start -->" "<!-- ai-sdlc:end -->" <<EOF
+## AI-Native SDLC
+
+EN: This project runs the six-stage loop in docs/AI-SDLC.md. Keep this block:
+re-running ai-sdlc-starter --adopt refreshes it and nothing else.
+VI: Project chay vong lap 6 giai doan trong docs/AI-SDLC.md. Giu khoi nay.
+
+Loop: /intent -> /spec -> /feature. Two human gates: approve the plan, approve the commit.
+
+### Commands that prove a change works / Lenh kiem chung
+$cmds
+
+### Rules / Quy tac
+- Run the commands above before reporting a task done, and paste the output.
+- If a test fails, fix the code, not the test. Never skip or delete a test.
+- Never push, merge or deploy. A human does that.
+- Chay cac lenh tren truoc khi bao xong. Test fail thi sua code, khong sua test.
+EOF
+
+  upsert_block AGENTS.md "<!-- ai-sdlc:start -->" "<!-- ai-sdlc:end -->" <<EOF
+## AI-Native SDLC
+
+EN: Instructions for any coding agent (Codex, Cursor, Copilot, Gemini CLI...).
+The loop and its artifacts are described in docs/AI-SDLC.md.
+VI: Huong dan cho moi coding agent. Vong lap mo ta trong docs/AI-SDLC.md.
+
+### Artifacts / Tai lieu
+- intent/ -> why. specs/ -> what. plans/ -> how. One file per change.
+- REVIEW.md -> review policy. monitoring/bands.yaml -> alert bands.
+
+### Commands that prove a change works / Lenh kiem chung
+$cmds
+
+### Do not / Khong duoc
+- Do not push, merge, deploy, or rewrite git history. A human does that.
+- Do not weaken, skip or delete a test to make a suite pass. Fix the code.
+- Do not edit .claude/hooks/** or .claude/settings.json.
+- Do not commit secrets.
+
+### What done means / The nao la xong
+1. The commands above pass, and the output is pasted into the reply as evidence.
+2. Every acceptance criterion in the plan is met, or listed as not met.
+EOF
+fi
+
 # =============================================================================
 # 9) git init / Khoi tao git
 # =============================================================================
-if [ "$DO_GIT" -eq 1 ]; then
+if [ "$DO_GIT" -eq 1 ] && [ "$ADOPT" -eq 0 ] && [ "$DRY_RUN" -eq 0 ]; then
   if [ ! -d .git ]; then
     if command -v git >/dev/null 2>&1; then
       git init -q && ok "git init"
@@ -1324,14 +1579,51 @@ if [ "$DO_GIT" -eq 1 ]; then
 fi
 
 # =============================================================================
+# Report / Bao cao
+# =============================================================================
+rm -f "$TMP_MAKEFILE"
+count_lines() { if [ -z "$1" ]; then echo 0; else printf '%s' "$1" | awk 'NF' | wc -l | tr -d ' '; fi; }
+echo
+info "Report / Bao cao"
+msg  "  created / tao moi:       $(count_lines "$created")"
+msg  "  kept yours / giu nguyen: $(count_lines "$kept")"
+msg  "  unchanged / khong doi:   $(count_lines "$same")"
+msg  "  updated / cap nhat:      $(count_lines "$updated")"
+if [ -n "$updated" ]; then
+  printf '%s' "$updated" | awk 'NF { print "    ~ " $0 }'
+fi
+if [ "$ADOPT" -eq 1 ]; then
+  collisions="$(printf '%s' "$kept" | grep -E '^\.claude/(agents|skills)/' || true)"
+  if [ -n "$collisions" ]; then
+    warn "Already existed and kept - /feature will use your versions:"
+    warn "Da co san va duoc giu - /feature se dung ban cua ban:"
+    printf '%s\n' "$collisions" | awk 'NF { print "    = " $0 }'
+  fi
+fi
+
+# =============================================================================
 # Done / Xong
 # =============================================================================
 echo
-ok "AI-Native SDLC scaffold ready in $(pwd)"
-ok "Khung AI-Native SDLC da san sang trong $(pwd)"
-echo
-info "Next / Tiep theo:"
-msg  "  1. Edit CLAUDE.md - fill in Commands/Conventions. / Sua CLAUDE.md."
-[ -n "$tool_versions" ] && msg "  2. Install runtimes: 'mise install' or use nvm/asdf. / Cai runtime: 'mise install' hoac nvm/asdf."
-msg  "  3. Open Claude Code here, then run: /intent <your idea>"
-msg  "  4. Read docs/AI-SDLC.md for the full loop. / Doc docs/AI-SDLC.md."
+if [ "$DRY_RUN" -eq 1 ]; then
+  ok "Dry run finished - nothing was written. / Xem truoc xong - chua ghi gi."
+  msg "  Run the same command without --dry-run to apply it."
+elif [ "$ADOPT" -eq 1 ]; then
+  ok "AI-Native SDLC kit added to $(pwd)"
+  ok "Da them bo AI-Native SDLC vao $(pwd)"
+  echo
+  info "Next / Tiep theo:"
+  msg  "  1. Review what changed: git status && git diff"
+  msg  "  2. Check the Commands in the ai-sdlc block of CLAUDE.md. / Kiem tra muc Commands."
+  msg  "  3. Open Claude Code here, then run: /intent <your idea>"
+  msg  "  CI workflows were not added (they need ANTHROPIC_API_KEY). See docs/AI-SDLC.md."
+else
+  ok "AI-Native SDLC scaffold ready in $(pwd)"
+  ok "Khung AI-Native SDLC da san sang trong $(pwd)"
+  echo
+  info "Next / Tiep theo:"
+  msg  "  1. Edit CLAUDE.md - fill in Commands/Conventions. / Sua CLAUDE.md."
+  [ -n "$tool_versions" ] && msg "  2. Install runtimes: 'mise install' or use nvm/asdf. / Cai runtime: 'mise install' hoac nvm/asdf."
+  msg  "  3. Open Claude Code here, then run: /intent <your idea>"
+  msg  "  4. Read docs/AI-SDLC.md for the full loop. / Doc docs/AI-SDLC.md."
+fi

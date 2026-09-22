@@ -9,6 +9,9 @@ and lints itself from the first commit.
 npx ai-sdlc-starter@latest my-app -w node
 ```
 
+Already have a project? `npx ai-sdlc-starter@latest --adopt` adds the kit without
+overwriting anything (`--dry-run` previews it).
+
 Runtimes: `-w node` · `python` · `go` · `java`, pinned with `@` (`-w python@3.11`),
 comma separated. `-h` lists every option.
 

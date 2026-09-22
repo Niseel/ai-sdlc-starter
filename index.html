@@ -66,7 +66,7 @@
       <div class="orb orb--blue hero__orb-b" aria-hidden="true"></div>
       <div class="container hero__inner">
         <span class="tag reveal"><span class="tag__dot" aria-hidden="true"></span>
-          <span>v<span data-version>0.2.0</span> · <span class="en">Built on Anthropic's AI-Native SDLC Playbook</span><span class="vi">Dựa trên AI-Native SDLC Playbook của Anthropic</span></span>
+          <span>v<span data-version>0.3.0</span> · <span class="en">Built on Anthropic's AI-Native SDLC Playbook</span><span class="vi">Dựa trên AI-Native SDLC Playbook của Anthropic</span></span>
         </span>
         <h1 class="h1 hero__title reveal">
           <span class="en">Start Every Project <span class="text-lavender">the AI-Native Way</span></span>
@@ -101,7 +101,7 @@
         <div class="terminal">
           <div class="terminal__bar" aria-hidden="true"><i></i><i></i><i></i><span>~/my-app — bash</span></div>
           <pre class="terminal__body" aria-label="Example output of the scaffolder"><code><span class="t-line"><span class="prompt">$</span> bash init.sh my-app -w node,python@3.12</span>
-<span class="t-line"><span class="info">[info]</span> init-ai-sdlc 0.2.0</span>
+<span class="t-line"><span class="info">[info]</span> init-ai-sdlc 0.3.0</span>
 <span class="t-line"><span class="info">[info]</span> Project / Du an: my-app</span>
 <span class="t-line"><span class="info">[info]</span> Node:   latest · Python: 3.12</span>
 <span class="t-line"><span class="ok">[ok]</span>   CLAUDE.md</span>
@@ -298,6 +298,7 @@
               <select class="input" name="java"><option value="">—</option><option>21</option><option>17</option></select>
             </label>
             <label class="check"><input type="checkbox" name="nogit"><span><span class="en">Skip <code class="code-inline">git init</code></span><span class="vi">Bỏ qua <code class="code-inline">git init</code></span></span></label>
+            <label class="check"><input type="checkbox" name="adopt"><span><span class="en">Existing project — add the kit only (<code class="code-inline">--adopt</code>)</span><span class="vi">Project có sẵn — chỉ thêm bộ SDLC (<code class="code-inline">--adopt</code>)</span></span></label>
             <label class="check"><input type="checkbox" name="force"><span><span class="en">Overwrite existing files</span><span class="vi">Ghi đè file đã có</span></span></label>
           </form>
 
@@ -305,7 +306,7 @@
             <div class="builder__outhead">
               <div class="tabs" role="tablist" aria-label="Source">
                 <button type="button" role="tab" data-src="short" aria-selected="true"><span class="en">Latest</span><span class="vi">Mới nhất</span></button>
-                <button type="button" role="tab" data-src="pinned" aria-selected="false"><span class="en">Pinned v</span><span class="vi">Ghim v</span><span data-version>0.2.0</span></button>
+                <button type="button" role="tab" data-src="pinned" aria-selected="false"><span class="en">Pinned v</span><span class="vi">Ghim v</span><span data-version>0.3.0</span></button>
               </div>
               <button type="button" class="copy-btn" data-copy="#built-cmd">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-copy"/></svg><span class="copy-btn__text"><span class="en">Copy</span><span class="vi">Sao chép</span></span>
@@ -352,6 +353,37 @@
             <p class="muted"><span class="en">Open Claude Code in the folder and run <code class="code-inline">/intent &lt;your idea&gt;</code>.</span><span class="vi">Mở Claude Code trong thư mục và chạy <code class="code-inline">/intent &lt;ý tưởng&gt;</code>.</span></p>
           </li>
         </ol>
+
+        <div class="card card--glass adopt reveal">
+          <div class="adopt__text">
+            <span class="tag"><span class="tag__dot" aria-hidden="true"></span><span class="en">New in v0.3</span><span class="vi">Mới ở v0.3</span></span>
+            <h3 class="h3"><span class="en">Already Have a Project?</span><span class="vi">Đã có project rồi?</span></h3>
+            <p class="muted"><span class="en">Run it in the project root with <code class="code-inline">--adopt</code>. You get the agents, skills, hooks and stage folders — and nothing of yours is overwritten.</span><span class="vi">Chạy ở thư mục gốc project với <code class="code-inline">--adopt</code>. Bạn nhận agent, skill, hook và thư mục các giai đoạn — không file nào của bạn bị ghi đè.</span></p>
+            <ul class="adopt__list" role="list">
+              <li><span class="en"><b>CLAUDE.md, AGENTS.md, .gitignore</b> keep every line; one marked block is added at the end.</span><span class="vi"><b>CLAUDE.md, AGENTS.md, .gitignore</b> giữ nguyên từng dòng; chỉ thêm một khối có đánh dấu ở cuối.</span></li>
+              <li><span class="en"><b>.claude/settings.json</b> is merged, never replaced — the original stays as <code class="code-inline">.bak</code>.</span><span class="vi"><b>.claude/settings.json</b> được gộp, không bị thay — bản gốc giữ ở <code class="code-inline">.bak</code>.</span></li>
+              <li><span class="en"><b>Your test and lint commands</b> are detected and handed to the agent.</span><span class="vi"><b>Lệnh test và lint của bạn</b> được tự dò và giao cho agent.</span></li>
+              <li><span class="en">No runtime stack, no README, no CI. Run it again and only the block refreshes.</span><span class="vi">Không stack runtime, không README, không CI. Chạy lại thì chỉ khối đó được cập nhật.</span></li>
+            </ul>
+          </div>
+          <div class="adopt__cmd">
+            <div class="builder__outhead">
+              <p class="label"><span class="en">1 · Preview every change</span><span class="vi">1 · Xem trước mọi thay đổi</span></p>
+              <button type="button" class="copy-btn" data-copy="#adopt-dry">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-copy"/></svg><span class="copy-btn__text"><span class="en">Copy</span><span class="vi">Sao chép</span></span>
+              </button>
+            </div>
+            <pre class="codeblock"><code id="adopt-dry">npx ai-sdlc-starter@latest --adopt --dry-run</code></pre>
+            <div class="builder__outhead">
+              <p class="label"><span class="en">2 · Apply it</span><span class="vi">2 · Áp dụng</span></p>
+              <button type="button" class="copy-btn" data-copy="#adopt-run">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-copy"/></svg><span class="copy-btn__text"><span class="en">Copy</span><span class="vi">Sao chép</span></span>
+              </button>
+            </div>
+            <pre class="codeblock"><code id="adopt-run">npx ai-sdlc-starter@latest --adopt</code></pre>
+            <p class="builder__note subtle"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-info"/></svg><span class="en">No Node? Use the builder above with <b>Existing project</b> ticked for the curl or PowerShell form.</span><span class="vi">Không có Node? Dùng bộ tạo lệnh ở trên, tick <b>Project có sẵn</b> để lấy lệnh curl hoặc PowerShell.</span></p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -519,6 +551,10 @@
             <div><span class="en">No. It only pins versions: <code class="code-inline">.nvmrc</code>, <code class="code-inline">.python-version</code>, <code class="code-inline">.tool-versions</code> and the matching manifest. Install runtimes with mise, nvm or asdf. This keeps the one-liner dependency-free.</span><span class="vi">Không. Nó chỉ ghim phiên bản: <code class="code-inline">.nvmrc</code>, <code class="code-inline">.python-version</code>, <code class="code-inline">.tool-versions</code> và manifest tương ứng. Cài runtime bằng mise, nvm hoặc asdf. Nhờ vậy lệnh một dòng không phụ thuộc gì.</span></div>
           </details>
           <details>
+            <summary><span class="en">Can I use it on a project I already have?</span><span class="vi">Dùng được cho project đã có sẵn không?</span></summary>
+            <div><span class="en">Yes: add <code class="code-inline">--adopt</code>. Without it, the script refuses to run in a folder that already holds a project, so a mistyped command cannot litter your repo. Try <code class="code-inline">--adopt --dry-run</code> first to see every change.</span><span class="vi">Được: thêm <code class="code-inline">--adopt</code>. Không có cờ này, script từ chối chạy trong thư mục đã có project, nên gõ nhầm lệnh cũng không làm bẩn repo. Nên chạy <code class="code-inline">--adopt --dry-run</code> trước để xem mọi thay đổi.</span></div>
+          </details>
+          <details>
             <summary><span class="en">Is it safe to run twice?</span><span class="vi">Chạy lại lần hai có an toàn không?</span></summary>
             <div><span class="en">Yes. Existing files are skipped unless you pass <code class="code-inline">--force</code> (<code class="code-inline">-Force</code> on Windows).</span><span class="vi">Có. File đã tồn tại sẽ được bỏ qua, trừ khi bạn dùng <code class="code-inline">--force</code> (<code class="code-inline">-Force</code> trên Windows).</span></div>
           </details>
@@ -568,7 +604,7 @@
         <span>AI-SDLC Starter</span>
       </a>
       <p class="subtle footer__note">
-        v<span data-version>0.2.0</span> · MIT ·
+        v<span data-version>0.3.0</span> · MIT ·
         <span class="en">Independent project, not affiliated with Anthropic.</span><span class="vi">Dự án độc lập, không liên kết với Anthropic.</span>
       </p>
       <nav class="footer__links" aria-label="Footer">

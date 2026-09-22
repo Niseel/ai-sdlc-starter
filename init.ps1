@@ -1,6 +1,6 @@
 <#
 =============================================================================
- init.ps1   (init-ai-sdlc v0.2.0)
+ init.ps1   (init-ai-sdlc v0.3.0)
  EN: Scaffolds an AI-Native SDLC project (Anthropic 6-stage playbook:
      Plan -> Design -> Build -> Test -> Deploy -> Maintain).
  VI: Tao khung du an theo AI-Native SDLC cua Anthropic (6 giai doan:
@@ -34,11 +34,13 @@ param(
   [string]$Java = "",
   [switch]$Force,
   [switch]$NoGit,
+  [switch]$Adopt,
+  [switch]$DryRun,
   [switch]$Help
 )
 
 $ErrorActionPreference = "Stop"
-$SCRIPT_VERSION = "0.2.0"
+$SCRIPT_VERSION = "0.3.0"
 
 function Show-Usage {
 @'
@@ -60,6 +62,8 @@ Usage / Cach dung:
   -Java VER      EN: pin Java version (e.g. 21)              VI: ghim ban Java
   -Force         EN: overwrite existing files                VI: ghi de file da co
   -NoGit         EN: do not run 'git init'                   VI: khong chay git init
+  -Adopt         EN: add the SDLC kit to an existing project VI: them bo SDLC vao project co san
+  -DryRun        EN: show what would change, write nothing   VI: chi xem truoc, khong ghi gi
   -Help          EN: show this help                          VI: hien tro giup
 
 Examples / Vi du:
@@ -107,9 +111,52 @@ function Skip ($m) { Write-Host "[skip] $m"   -ForegroundColor DarkGray }
 #     and go back at the end. Leaving them inside the new project is surprising.
 # VI: Set-Location doi thu muc cua ca phien, nen nho cho cu va quay lai o cuoi.
 $OriginalLocation = Get-Location
+if ($DryRun -and -not (Test-Path $Dir)) { Warn "--dry-run needs an existing directory / can thu muc co san: $Dir"; exit 1 }
 New-Item -ItemType Directory -Force -Path $Dir | Out-Null
 Set-Location $Dir
 if ([string]::IsNullOrEmpty($Name)) { $Name = Split-Path -Leaf (Get-Location).Path }
+
+# ---- Existing-project guard / Chan chay nham tren project co san -------------
+# EN: git writes to stderr; Windows PowerShell 5.1 turns that into a terminating
+#     error under ErrorActionPreference=Stop, so relax it around git calls.
+function Invoke-GitQuiet {
+  param([string[]]$GitArgs)
+  if (-not (Get-Command git -ErrorAction SilentlyContinue)) { return $null }
+  $prev = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+  try {
+    $out = & git @GitArgs 2>$null
+    if ($LASTEXITCODE -ne 0) { return $null }
+    if ($null -eq $out) { return "" }
+    return ($out -join "`n")
+  } catch { return $null } finally { $ErrorActionPreference = $prev }
+}
+function Test-ExistingProject {
+  foreach ($f in 'package.json','pyproject.toml','requirements.txt','go.mod','pom.xml',
+                 'build.gradle','build.gradle.kts','Cargo.toml','composer.json','Gemfile') {
+    if (Test-Path $f) { return $true }
+  }
+  if ((Test-Path '.git') -and ($null -ne (Invoke-GitQuiet @('rev-parse', '--verify', 'HEAD')))) { return $true }
+  return $false
+}
+if ((-not $Adopt) -and (-not $Force) -and (-not (Test-Path 'intent/_TEMPLATE.md')) -and (Test-ExistingProject)) {
+  Warn "This folder already holds a project. / Thu muc nay da co project."
+  Warn "Re-run with -Adopt to add the SDLC kit without touching your code,"
+  Warn "or with -Force to scaffold a fresh project here anyway."
+  Warn "Chay lai voi -Adopt de them bo SDLC ma khong dung toi code cua ban."
+  Set-Location $OriginalLocation
+  exit 1
+}
+if ($Adopt) {
+  if ($Node -or $Python -or $Go -or $Java) { Warn "-Adopt ignores -With: your project already has its stack. / -Adopt bo qua -With." }
+  $Node = ""; $Python = ""; $Go = ""; $Java = ""
+  if (Test-Path '.git') {
+    $status = Invoke-GitQuiet @('status', '--porcelain')
+    if ($status) {
+      Warn "Uncommitted changes here. Commit or stash first, so the starter's diff is easy to review."
+      Warn "Co thay doi chua commit. Nen commit/stash truoc de review rieng phan starter them vao."
+    }
+  }
+}
 
 Info "init-ai-sdlc $SCRIPT_VERSION"
 Info "Project / Du an: $Name"
@@ -118,32 +165,101 @@ if ($Node)   { Info "Node:   $Node" }
 if ($Python) { Info "Python: $Python" }
 if ($Go)     { Info "Go:     $Go" }
 if ($Java)   { Info "Java:   $Java" }
+if ($Adopt)  { Info "Mode / Che do: adopt (existing project / project co san)" }
+if ($DryRun) { Info "Dry run: nothing will be written / khong ghi file nao" }
 
 # ---- File writer: skips existing unless -Force / Ham ghi file ----------------
+$script:Created = New-Object System.Collections.Generic.List[string]
+$script:Kept    = New-Object System.Collections.Generic.List[string]
+$script:Same    = New-Object System.Collections.Generic.List[string]
+$script:Updated = New-Object System.Collections.Generic.List[string]
+$script:Utf8    = New-Object System.Text.UTF8Encoding($false)
+
+# EN: "kept" means the file differs from what the starter would write, so it is
+#     yours. "same" means it already matches (e.g. written by an earlier run).
+# VI: "kept" = file khac ban cua starter, tuc la cua ban. "same" = da giong het.
 function Write-File {
   param([string]$Path, [string]$Content)
-  $dir = Split-Path -Parent $Path
-  if ($dir) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
-  if ((Test-Path $Path) -and (-not $Force)) { Skip $Path; return }
-  # Write UTF-8 without BOM, LF line endings, exactly one trailing newline (match bash heredocs)
+  # UTF-8 without BOM, LF line endings, exactly one trailing newline (match bash heredocs)
   $lf = $Content -replace "`r`n", "`n"
   if (-not $lf.EndsWith("`n")) { $lf += "`n" }
-  [System.IO.File]::WriteAllText((Join-Path (Get-Location) $Path), $lf, (New-Object System.Text.UTF8Encoding($false)))
+  $full = Join-Path (Get-Location) $Path
+  if ((Test-Path $Path) -and (-not $Force)) {
+    if ([System.IO.File]::ReadAllText($full) -ceq $lf) { $script:Same.Add($Path); Skip "$Path (unchanged)" }
+    else { $script:Kept.Add($Path); Skip "$Path (yours, kept / cua ban, giu nguyen)" }
+    return
+  }
+  $script:Created.Add($Path)
+  if ($DryRun) { Info "would write / se ghi: $Path"; return }
+  $dir = Split-Path -Parent $Path
+  if ($dir) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+  [System.IO.File]::WriteAllText($full, $lf, $script:Utf8)
   Ok $Path
 }
 function New-Keep { param([string]$Dir)
+  if ($DryRun) { return }
   New-Item -ItemType Directory -Force -Path $Dir | Out-Null
   $k = Join-Path $Dir ".gitkeep"; if (-not (Test-Path $k)) { New-Item -ItemType File -Force -Path $k | Out-Null }
 }
 
+# ---- Marked block: add or refresh without touching the rest of the file ------
+# EN: Missing file -> just the block. Block present -> replaced in place.
+#     Otherwise -> appended after a blank line. Same algorithm as init.sh.
+# VI: Chen hoac cap nhat khoi co danh dau, cung thuat toan voi init.sh.
+function Update-Block {
+  param([string]$Path, [string]$Start, [string]$End, [string]$Body)
+  $b = ($Body -replace "`r`n", "`n") -replace "`n+$", ""
+  $block = "$Start`n$b`n$End`n"
+  $full = Join-Path (Get-Location) $Path
+  if (-not (Test-Path $Path)) {
+    $script:Created.Add($Path)
+    if ($DryRun) { Info "would write / se ghi: $Path"; return }
+    $dir = Split-Path -Parent $Path
+    if ($dir) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+    [System.IO.File]::WriteAllText($full, $block, $script:Utf8)
+    Ok $Path
+    return
+  }
+  $current = [System.IO.File]::ReadAllText($full)
+  if ($current.Contains($Start)) {
+    $lines = $current -split "`n"
+    if ($current.EndsWith("`n")) { $lines = $lines[0..($lines.Count - 2)] }
+    $blockLines = $block.TrimEnd("`n") -split "`n"
+    $out = New-Object System.Collections.Generic.List[string]
+    $skipping = $false
+    foreach ($l in $lines) {
+      $cmp = $l.TrimEnd("`r")
+      if ($cmp -ceq $Start) { $out.AddRange([string[]]$blockLines); $skipping = $true; continue }
+      if ($skipping -and ($cmp -ceq $End)) { $skipping = $false; continue }
+      if (-not $skipping) { $out.Add($l) }
+    }
+    $new = ($out -join "`n") + "`n"
+    if ($new -ceq $current) { $script:Same.Add($Path); Skip "$Path (block unchanged / khoi khong doi)"; return }
+    $script:Updated.Add($Path)
+    if ($DryRun) { Info "would refresh block / se cap nhat khoi: $Path"; return }
+    [System.IO.File]::WriteAllText($full, $new, $script:Utf8)
+    Ok "$Path (block refreshed / da cap nhat khoi)"
+    return
+  }
+  $prefix = $current
+  if ($prefix.Length -gt 0 -and -not $prefix.EndsWith("`n")) { $prefix += "`n" }
+  $script:Updated.Add($Path)
+  if ($DryRun) { Info "would append block / se chen khoi: $Path"; return }
+  [System.IO.File]::WriteAllText($full, ($prefix + "`n" + $block), $script:Utf8)
+  Ok "$Path (block appended / da chen khoi)"
+}
+
 # ---- 1) Directories ----------------------------------------------------------
-$dirs = @('intent','specs','plans','docs/adr','docs/runbooks','docs/incidents',
-          'evals','monitoring','src','tests','scripts',
-          '.claude/agents','.claude/skills','.claude/hooks','.github/workflows')
-foreach ($d in $dirs) { New-Item -ItemType Directory -Force -Path $d | Out-Null }
-New-Keep 'src'; New-Keep 'tests'; New-Keep 'scripts'
+if (-not $DryRun) {
+  $dirs = @('intent','specs','plans','docs/adr','docs/runbooks','docs/incidents',
+            'evals','monitoring','.claude/agents','.claude/skills','.claude/hooks')
+  foreach ($d in $dirs) { New-Item -ItemType Directory -Force -Path $d | Out-Null }
+}
+# EN: An existing project already has its own layout. / VI: Project co san da co bo cuc rieng.
+if (-not $Adopt) { New-Keep 'src'; New-Keep 'tests'; New-Keep 'scripts' }
 
 # ---- 2) Root files -----------------------------------------------------------
+if (-not $Adopt) {
 Write-File 'README.md' (@'
 # __NAME__
 
@@ -176,7 +292,9 @@ Moi giai doan commit mot artifact vao git de giai doan sau doc:
 
 See `docs/AI-SDLC.md` for the full guide. Xem huong dan day du o `docs/AI-SDLC.md`.
 '@ -replace '__NAME__', $Name)
+}
 
+if (-not $Adopt) {
 Write-File '.gitignore' @'
 # Dependencies
 node_modules/
@@ -206,14 +324,25 @@ Thumbs.db
 .idea/
 .vscode/
 '@
+} else {
+Update-Block '.gitignore' '# ai-sdlc:start' '# ai-sdlc:end' @'
+# EN: local Claude Code files, never committed / VI: file cuc bo, khong commit
+.claude/settings.local.json
+.claude/settings.json.bak
+.claude/agent-memory-local/
+'@
+}
 
+if (-not $Adopt) {
 Write-File '.env.example' @'
 # EN: Copy to .env and fill in. Never commit the real .env.
 # VI: Copy thanh .env va dien. Khong bao gio commit .env that.
 APP_ENV=development
 # ANTHROPIC_API_KEY=   # only needed for CI evals / chi can cho CI evals
 '@
+}
 
+if (-not $Adopt) {
 Write-File '.editorconfig' @'
 root = true
 [*]
@@ -228,6 +357,7 @@ indent_size = 4
 [*.md]
 trim_trailing_whitespace = false
 '@
+}
 
 Write-File 'REVIEW.md' @'
 # Review instructions / Huong dan review
@@ -250,6 +380,7 @@ Report at most five nits per review; summarize the rest as a count.
 Generated files and anything CI already enforces.
 '@
 
+if (-not $Adopt) {
 Write-File 'CLAUDE.md' (@'
 # __NAME__
 
@@ -284,6 +415,7 @@ Cac lenh goc nam trong AGENTS.md.
 <!-- VI: Moi khi Claude sai 2 lan, them 1 dong o day. -->
 - <e.g. do not bump dependency versions; the platform team owns them>
 '@ -replace '__NAME__', $Name)
+}
 
 # ---- 3) Stage artifacts ------------------------------------------------------
 Write-File 'intent/_TEMPLATE.md' @'
@@ -827,7 +959,7 @@ exit 0
 '@
 
 # ---- settings.json -----------------------------------------------------------
-Write-File '.claude/settings.json' @'
+$SettingsJson = @'
 {
   "permissions": {
     "allow": [
@@ -868,7 +1000,58 @@ Write-File '.claude/settings.json' @'
 }
 '@
 
+# EN: Merge the starter's permissions and hooks into an existing settings.json.
+#     Nothing of yours is removed; the original is kept as settings.json.bak.
+# VI: Gop permissions va hooks vao settings.json co san. Khong xoa gi cua ban.
+function Merge-Settings {
+  $target = '.claude/settings.json'; $side = '.claude/settings.ai-sdlc.json'
+  $full = Join-Path (Get-Location) $target
+  $user = $null
+  try { $user = [System.IO.File]::ReadAllText($full) | ConvertFrom-Json } catch { $user = $null }
+  if ($null -eq $user -or $user -isnot [System.Management.Automation.PSCustomObject]) {
+    $script:Created.Add($side)
+    Warn "Could not merge $target automatically (it is not valid JSON)."
+    Warn "Wrote $side - merge it into $target to switch the guardrail hooks on."
+    Warn "Chua gop duoc tu dong. Hay gop $side vao $target de bat hook bao ve."
+    if ($DryRun) { Info "would write / se ghi: $side"; return }
+    [System.IO.File]::WriteAllText((Join-Path (Get-Location) $side), (($SettingsJson -replace "`r`n", "`n") + "`n"), $script:Utf8)
+    return
+  }
+  $st = $SettingsJson | ConvertFrom-Json
+  if (-not $user.PSObject.Properties['permissions']) { $user | Add-Member -NotePropertyName permissions -NotePropertyValue ([pscustomobject]@{}) }
+  foreach ($k in 'allow', 'deny') {
+    $cur = @(); if ($user.permissions.PSObject.Properties[$k]) { $cur = @($user.permissions.$k) }
+    $merged = @($cur) + @($st.permissions.$k | Where-Object { $cur -notcontains $_ })
+    if ($user.permissions.PSObject.Properties[$k]) { $user.permissions.$k = $merged }
+    else { $user.permissions | Add-Member -NotePropertyName $k -NotePropertyValue $merged }
+  }
+  if (-not $user.PSObject.Properties['hooks']) { $user | Add-Member -NotePropertyName hooks -NotePropertyValue ([pscustomobject]@{}) }
+  foreach ($ev in $st.hooks.PSObject.Properties) {
+    $groups = @(); if ($user.hooks.PSObject.Properties[$ev.Name]) { $groups = @($user.hooks.($ev.Name)) }
+    foreach ($g in @($ev.Value)) {
+      $match = $groups | Where-Object { $_.matcher -eq $g.matcher } | Select-Object -First 1
+      if ($match) {
+        $have = @($match.hooks | ForEach-Object { $_ | ConvertTo-Json -Compress -Depth 10 })
+        $match.hooks = @($match.hooks) + @($g.hooks | Where-Object { $have -notcontains ($_ | ConvertTo-Json -Compress -Depth 10) })
+      } else { $groups += $g }
+    }
+    if ($user.hooks.PSObject.Properties[$ev.Name]) { $user.hooks.($ev.Name) = @($groups) }
+    else { $user.hooks | Add-Member -NotePropertyName $ev.Name -NotePropertyValue @($groups) }
+  }
+  $json = (($user | ConvertTo-Json -Depth 20) -replace "`r`n", "`n") + "`n"
+  if ($json -ceq [System.IO.File]::ReadAllText($full)) { $script:Same.Add($target); Skip "$target (already merged / da gop tu truoc)"; return }
+  $script:Updated.Add($target)
+  if ($DryRun) { Info "would merge permissions and hooks into / se gop vao: $target"; return }
+  if (-not (Test-Path "$target.bak")) { Copy-Item $target "$target.bak" }
+  [System.IO.File]::WriteAllText($full, $json, $script:Utf8)
+  Ok "$target (merged, original in $target.bak / da gop, ban goc o .bak)"
+}
+
+if ($Adopt -and (Test-Path '.claude/settings.json') -and (-not $Force)) { Merge-Settings }
+else { Write-File '.claude/settings.json' $SettingsJson }
+
 # ---- 7) CI workflows ---------------------------------------------------------
+if (-not $Adopt) {
 Write-File '.github/workflows/agent-evals.yml' @'
 name: Agent evals
 # EN: Regression-test the config that steers the agent (CLAUDE.md, .claude/**).
@@ -896,7 +1079,9 @@ jobs:
             ./evals/check.sh "$eval" result.json
           done
 '@
+}
 
+if (-not $Adopt) {
 Write-File '.github/workflows/claude-review.yml' @'
 name: Claude PR review
 # EN: Uses claude-code-action to review PRs against REVIEW.md. Add ANTHROPIC_API_KEY
@@ -919,6 +1104,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: "Review this PR following REVIEW.md. Post findings tagged by severity."
 '@
+}
 
 # ---- 8) Runtime stacks / Bo khung theo ngon ngu ------------------------------
 # EN: Pins versions AND writes a stack that can actually build, test and lint.
@@ -1191,11 +1377,10 @@ class GreeterTest {
 }
 
 if ($toolVersions.Count -gt 0) {
-  if ((-not (Test-Path '.tool-versions')) -or $Force) {
-    Write-File '.tool-versions' (($toolVersions -join "`n") + "`n")
-  } else { Skip '.tool-versions' }
+  Write-File '.tool-versions' (($toolVersions -join "`n") + "`n")
 }
 
+if (-not $Adopt) {
 # ---- 8b) One entry point: Makefile + AGENTS.md + CI --------------------------
 $noneMsg = "No command configured for this target. Edit the Makefile."
 function Get-MakeBody {
@@ -1290,8 +1475,102 @@ jobs:
 __CISETUP__      - run: make check
 '@ -replace '__CISETUP__', $ciSetupText)
 
+}
+
+# ---- 8c) Adopt: bring the SDLC contract into an existing project -----------
+# EN: Your CLAUDE.md and AGENTS.md stay as they are; a marked block is added at
+#     the end. Same detection order and wording as init.sh.
+# VI: CLAUDE.md va AGENTS.md cua ban giu nguyen; them khoi co danh dau o cuoi.
+function Get-DetectedCommands {
+  $out = New-Object System.Collections.Generic.List[string]
+  if (Test-Path 'Makefile') {
+    $mk = [System.IO.File]::ReadAllText((Join-Path (Get-Location) 'Makefile'))
+    foreach ($t in 'check', 'test', 'lint', 'build', 'fmt') {
+      if ($mk -cmatch "(?m)^$([regex]::Escape($t)):") { $out.Add("- make $t") }
+    }
+  }
+  if (Test-Path 'package.json') {
+    $pm = 'npm'
+    if (Test-Path 'pnpm-lock.yaml') { $pm = 'pnpm' }
+    if (Test-Path 'yarn.lock') { $pm = 'yarn' }
+    if ((Test-Path 'bun.lockb') -or (Test-Path 'bun.lock')) { $pm = 'bun' }
+    $scripts = New-Object System.Collections.Generic.List[string]; $inside = $false
+    foreach ($l in [System.IO.File]::ReadAllLines((Join-Path (Get-Location) 'package.json'))) {
+      if ($l -cmatch '"scripts"\s*:') { $inside = $true }
+      if ($inside) { $scripts.Add($l); if ($l -cmatch '\}') { break } }
+    }
+    $joined = $scripts -join "`n"
+    foreach ($k in 'test', 'lint', 'typecheck', 'build', 'format') {
+      if ($joined -cmatch ('"' + $k + '"\s*:')) { $out.Add("- $pm run $k") }
+    }
+  }
+  if (Test-Path 'pyproject.toml') {
+    $run = 'python -m '; if (Test-Path 'uv.lock') { $run = 'uv run ' }
+    $py = [System.IO.File]::ReadAllText((Join-Path (Get-Location) 'pyproject.toml'))
+    if ($py.Contains('pytest')) { $out.Add("- ${run}pytest -q") }
+    if ($py.Contains('ruff')) { $out.Add("- ${run}ruff check .") }
+  }
+  if (Test-Path 'go.mod') { $out.Add('- go test ./...'); $out.Add('- go vet ./...') }
+  if (Test-Path 'pom.xml') { $out.Add('- mvn -q -B test') }
+  if ((Test-Path 'build.gradle') -or (Test-Path 'build.gradle.kts')) {
+    if (Test-Path 'gradlew') { $out.Add('- ./gradlew test') } else { $out.Add('- gradle test') }
+  }
+  if (Test-Path 'Cargo.toml') { $out.Add('- cargo test'); $out.Add('- cargo clippy') }
+  return ($out -join "`n")
+}
+
+if ($Adopt) {
+  $cmds = Get-DetectedCommands
+  if (-not $cmds) {
+    $cmds = "- (none detected) Add the commands that build, test and lint this project.`n- (chua do duoc) Them cac lenh build, test, lint cua project."
+    Warn "No test or lint command detected. Add them to the ai-sdlc block in CLAUDE.md."
+  }
+  Update-Block 'CLAUDE.md' '<!-- ai-sdlc:start -->' '<!-- ai-sdlc:end -->' ((@'
+## AI-Native SDLC
+
+EN: This project runs the six-stage loop in docs/AI-SDLC.md. Keep this block:
+re-running ai-sdlc-starter --adopt refreshes it and nothing else.
+VI: Project chay vong lap 6 giai doan trong docs/AI-SDLC.md. Giu khoi nay.
+
+Loop: /intent -> /spec -> /feature. Two human gates: approve the plan, approve the commit.
+
+### Commands that prove a change works / Lenh kiem chung
+__CMDS__
+
+### Rules / Quy tac
+- Run the commands above before reporting a task done, and paste the output.
+- If a test fails, fix the code, not the test. Never skip or delete a test.
+- Never push, merge or deploy. A human does that.
+- Chay cac lenh tren truoc khi bao xong. Test fail thi sua code, khong sua test.
+'@).Replace('__CMDS__', $cmds))
+  Update-Block 'AGENTS.md' '<!-- ai-sdlc:start -->' '<!-- ai-sdlc:end -->' ((@'
+## AI-Native SDLC
+
+EN: Instructions for any coding agent (Codex, Cursor, Copilot, Gemini CLI...).
+The loop and its artifacts are described in docs/AI-SDLC.md.
+VI: Huong dan cho moi coding agent. Vong lap mo ta trong docs/AI-SDLC.md.
+
+### Artifacts / Tai lieu
+- intent/ -> why. specs/ -> what. plans/ -> how. One file per change.
+- REVIEW.md -> review policy. monitoring/bands.yaml -> alert bands.
+
+### Commands that prove a change works / Lenh kiem chung
+__CMDS__
+
+### Do not / Khong duoc
+- Do not push, merge, deploy, or rewrite git history. A human does that.
+- Do not weaken, skip or delete a test to make a suite pass. Fix the code.
+- Do not edit .claude/hooks/** or .claude/settings.json.
+- Do not commit secrets.
+
+### What done means / The nao la xong
+1. The commands above pass, and the output is pasted into the reply as evidence.
+2. Every acceptance criterion in the plan is met, or listed as not met.
+'@).Replace('__CMDS__', $cmds))
+}
+
 # ---- 9) git init -------------------------------------------------------------
-if (-not $NoGit) {
+if ((-not $NoGit) -and (-not $Adopt) -and (-not $DryRun)) {
   if (-not (Test-Path '.git')) {
     if (Get-Command git -ErrorAction SilentlyContinue) {
       git init -q; Ok "git init"
@@ -1299,15 +1578,46 @@ if (-not $NoGit) {
   } else { Skip "git (already a repo / da la repo)" }
 }
 
+# ---- Report ------------------------------------------------------------------
+Write-Host ""
+Info "Report / Bao cao"
+Write-Host "  created / tao moi:       $($script:Created.Count)"
+Write-Host "  kept yours / giu nguyen: $($script:Kept.Count)"
+Write-Host "  unchanged / khong doi:   $($script:Same.Count)"
+Write-Host "  updated / cap nhat:      $($script:Updated.Count)"
+foreach ($u in $script:Updated) { Write-Host "    ~ $u" }
+if ($Adopt) {
+  $collisions = @($script:Kept | Where-Object { $_ -match '^\.claude/(agents|skills)/' })
+  if ($collisions.Count -gt 0) {
+    Warn "Already existed and kept - /feature will use your versions:"
+    Warn "Da co san va duoc giu - /feature se dung ban cua ban:"
+    foreach ($c in $collisions) { Write-Host "    = $c" }
+  }
+}
+
 # ---- Done --------------------------------------------------------------------
 Write-Host ""
-Ok "AI-Native SDLC scaffold ready in $((Get-Location).Path)"
-Ok "Khung AI-Native SDLC da san sang trong $((Get-Location).Path)"
-Write-Host ""
-Info "Next / Tiep theo:"
-Write-Host "  1. Edit CLAUDE.md - fill in Commands/Conventions. / Sua CLAUDE.md."
-if ($toolVersions.Count -gt 0) { Write-Host "  2. Install runtimes: 'mise install' or use nvm/asdf. / Cai runtime." }
-Write-Host "  3. Open Claude Code here, then run: /intent <your idea>"
-Write-Host "  4. Read docs/AI-SDLC.md for the full loop. / Doc docs/AI-SDLC.md."
+if ($DryRun) {
+  Ok "Dry run finished - nothing was written. / Xem truoc xong - chua ghi gi."
+  Write-Host "  Run the same command without -DryRun to apply it."
+} elseif ($Adopt) {
+  Ok "AI-Native SDLC kit added to $((Get-Location).Path)"
+  Ok "Da them bo AI-Native SDLC vao $((Get-Location).Path)"
+  Write-Host ""
+  Info "Next / Tiep theo:"
+  Write-Host "  1. Review what changed: git status; git diff"
+  Write-Host "  2. Check the Commands in the ai-sdlc block of CLAUDE.md. / Kiem tra muc Commands."
+  Write-Host "  3. Open Claude Code here, then run: /intent <your idea>"
+  Write-Host "  CI workflows were not added (they need ANTHROPIC_API_KEY). See docs/AI-SDLC.md."
+} else {
+  Ok "AI-Native SDLC scaffold ready in $((Get-Location).Path)"
+  Ok "Khung AI-Native SDLC da san sang trong $((Get-Location).Path)"
+  Write-Host ""
+  Info "Next / Tiep theo:"
+  Write-Host "  1. Edit CLAUDE.md - fill in Commands/Conventions. / Sua CLAUDE.md."
+  if ($toolVersions.Count -gt 0) { Write-Host "  2. Install runtimes: 'mise install' or use nvm/asdf. / Cai runtime." }
+  Write-Host "  3. Open Claude Code here, then run: /intent <your idea>"
+  Write-Host "  4. Read docs/AI-SDLC.md for the full loop. / Doc docs/AI-SDLC.md."
+}
 
 Set-Location $OriginalLocation

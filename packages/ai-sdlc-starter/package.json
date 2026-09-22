@@ -1,6 +1,6 @@
 {
   "name": "ai-sdlc-starter",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Scaffold an AI-Native SDLC project in one command.",
   "bin": {
     "ai-sdlc-starter": "index.js"

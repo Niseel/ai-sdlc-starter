@@ -133,6 +133,17 @@
 .steps__num { font-size: var(--fs-h3); font-weight: var(--fw-light); line-height: var(--lh-ui); background: var(--grad-text-lavender); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .steps strong { color: var(--text-strong); font-weight: var(--fw-medium); }
 
+/* ---- Adopt card ------------------------------------------------------- */
+.adopt { position: relative; z-index: var(--z-content); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-8); margin-top: var(--space-9); padding: var(--space-8); }
+.adopt__text { display: grid; gap: var(--space-4); align-content: start; justify-items: start; }
+.adopt__list { display: grid; gap: var(--space-3); padding: 0; margin: 0; list-style: none; color: var(--text-muted); font-size: var(--fs-small); }
+.adopt__list li { padding-left: var(--space-5); position: relative; }
+.adopt__list li::before { content: ""; position: absolute; left: 0; top: 0.6em; width: 6px; height: 6px; border-radius: var(--radius-round); background: var(--accent); }
+.adopt__list b { color: var(--text-strong); font-weight: var(--fw-medium); }
+.adopt__cmd { display: grid; gap: var(--space-3); align-content: start; }
+.adopt__cmd .codeblock { white-space: pre-wrap; word-break: break-all; }
+.input:disabled { opacity: 0.45; cursor: not-allowed; }
+
 /* ---- Kit ----------------------------------------------------------------- */
 .kit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--grid-gap); align-items: start; }
 .kit__tree { padding: var(--space-7); position: sticky; top: 96px; }
@@ -186,7 +197,7 @@
   .nav__links { display: none; }
   .loop__stages { grid-template-columns: repeat(3, 1fr); }
   .loop__stages::before { display: none; }
-  .builder, .kit, .faq-wrap { grid-template-columns: minmax(0, 1fr); }
+  .builder, .kit, .faq-wrap, .adopt { grid-template-columns: minmax(0, 1fr); }
   .builder__out, .kit__tree, .faq-wrap__head { position: static; }
 }
 @media (max-width: 767px) {
@@ -202,6 +213,7 @@
   .terminal__body { font-size: var(--fs-xs); padding: var(--space-5); min-height: 0; }
   .terminal__bar span { transform: none; }
   .panel { padding: var(--space-8) var(--space-5); }
+  .adopt { padding: var(--space-6); gap: var(--space-6); }
   .btn-group .btn { flex: 1 1 100%; }
   .brand span { font-size: var(--fs-small); }
 }
