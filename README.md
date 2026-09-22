@@ -94,5 +94,6 @@ Nothing is pushed for you. You approve the plan, then the commit.
 | `design-system/` | tokens and rules every page here is built from |
 | `.claude/skills/` | `design-system`, `extract-design` |
 | [`docs/AGENT-READINESS.md`](docs/AGENT-READINESS.md) | what the stacks still miss, and the plan |
+| [`docs/RELEASING.md`](docs/RELEASING.md) | how a release reaches npm |
 
 [Ideas and bug reports →](https://github.com/Niseel/ai-sdlc-starter/issues) · MIT
