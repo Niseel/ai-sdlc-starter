@@ -32,7 +32,16 @@ jobs:
           set -euo pipefail
           node packages/ai-sdlc-starter/index.js smoke -w node -d /tmp/smoke --no-git
           test -f /tmp/smoke/Makefile
+      - name: skip if this version is already on npm
+        id: check
+        run: |
+          v="$(tr -d '[:space:]' < VERSION)"
+          if npm view "ai-sdlc-starter@$v" version >/dev/null 2>&1; then
+            echo "ai-sdlc-starter@$v is already published - nothing to do."
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: publish
+        if: steps.check.outputs.published != 'true'
         working-directory: packages/ai-sdlc-starter
         run: npm publish --provenance --access public
         env:
