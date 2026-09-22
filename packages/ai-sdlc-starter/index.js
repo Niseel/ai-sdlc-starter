@@ -24,6 +24,8 @@ const WINDOWS_FLAGS = new Map([
   ["-d", "-Dir"], ["--dir", "-Dir"],
   ["-f", "-Force"], ["--force", "-Force"],
   ["--no-git", "-NoGit"],
+  ["--adopt", "-Adopt"],
+  ["--dry-run", "-DryRun"],
   ["-h", "-Help"], ["--help", "-Help"],
   ["--node", "-Node"], ["--python", "-Python"], ["--go", "-Go"], ["--java", "-Java"],
 ]);

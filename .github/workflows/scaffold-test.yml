@@ -150,6 +150,32 @@ jobs:
           diff -r out-npx out-direct
           echo "wrapper and init.sh agree"
 
+  adopt:
+    name: --adopt keeps an existing project intact (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: bash scaffolder
+        shell: bash
+        run: bash scripts/test-adopt.sh sh "$RUNNER_TEMP/adopt-sh"
+      - name: PowerShell scaffolder
+        shell: bash
+        run: bash scripts/test-adopt.sh ps "$RUNNER_TEMP/adopt-ps"
+      - name: both scaffolders adopt the same way
+        shell: bash
+        run: |
+          set -euo pipefail
+          a="$RUNNER_TEMP/adopt-sh"; b="$RUNNER_TEMP/adopt-ps"
+          # Every file byte for byte, except settings.json: jq and PowerShell
+          # format JSON differently, so compare that one by content.
+          diff -r -x .git -x settings.json "$a" "$b"
+          diff <(jq -S . "$a/.claude/settings.json") <(jq -S . "$b/.claude/settings.json")
+          echo "bash and PowerShell adopt identically"
+
   compare:
     name: identical across operating systems
     needs: run
